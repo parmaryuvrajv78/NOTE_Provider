@@ -28,6 +28,14 @@ app.use('/api/materials', materialRoutes);
 app.use('/api/users', require('./routes/users'));
 app.use('/api/system', require('./routes/system'));
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+// Root route
+app.get("/", (req, res) => {
+    res.send("Backend is running 🚀");
 });
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+
