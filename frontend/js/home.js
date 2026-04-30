@@ -188,9 +188,9 @@ function openMatModal(id) {
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
-    document.getElementById('modalView').onclick = () => window.open(`/api/materials/view/${m.id || m._id}`, '_blank');
+    document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}`;
     document.getElementById('modalDownload').onclick = () => {
-        window.open(`/api/materials/download/${m.id || m._id}`, '_blank');
+        window.location.href = `${API_BASE}/materials/download/${m.id || m._id}`;
         showToast('Download started!', 'success');
     };
     document.getElementById('matModal').style.display = 'flex';
