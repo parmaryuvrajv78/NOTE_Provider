@@ -10,6 +10,8 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const materialRoutes = require('./routes/materials');
+const userRoutes = require('./routes/users');
+const systemRoutes = require('./routes/system');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,12 +23,17 @@ connectDB();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Use Routes
+// --- DEBUG ROUTES ---
+app.get('/api', (req, res) => {
+    res.json({ message: "API is working! Use specific endpoints like /api/login, /api/materials, etc." });
+});
+
+// --- MAIN ROUTES ---
 app.use('/api', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/materials', materialRoutes);
-app.use('/api/users', require('./routes/users'));
-app.use('/api/system', require('./routes/system'));
+app.use('/api/users', userRoutes);
+app.use('/api/system', systemRoutes);
 
 // Root route
 app.get("/", (req, res) => {

@@ -6,9 +6,9 @@ const User = require('../models/user');
 router.post('/login', async (req, res) => {
     try {
         const { rollNo, enrollNo } = req.body;
-        const user = await User.findOne({ 
-            rollNo: rollNo.toUpperCase(), 
-            enrollNo: enrollNo.toUpperCase() 
+        const user = await User.findOne({
+            rollNo: rollNo.toUpperCase(),
+            enrollNo: enrollNo.toUpperCase()
         });
 
         if (user) {
@@ -16,8 +16,8 @@ router.post('/login', async (req, res) => {
                 return res.json({ success: false, message: 'Your request is pending approval.' });
             }
             // Return user format matching previous UI
-            return res.json({ 
-                success: true, 
+            return res.json({
+                success: true,
                 user: {
                     id: user._id.toString(),
                     name: user.name,
@@ -26,13 +26,21 @@ router.post('/login', async (req, res) => {
                     role: user.role,
                     branch: user.branch,
                     approved: user.approved
-                } 
+                }
             });
         }
         res.json({ success: false, message: 'User not found. Please register.' });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Login Error' });
     }
+});
+
+// DEBUG GET ROUTE (For Browser Test)
+router.get('/login', (req, res) => {
+    res.json({
+        message: "Auth Login endpoint is active. Use POST to login.",
+        usage: "POST /api/login with { rollNo, enrollNo }"
+    });
 });
 
 // 2. Auth: Register
