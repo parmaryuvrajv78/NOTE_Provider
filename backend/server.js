@@ -34,6 +34,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/system', systemRoutes);
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 
 // Root route
 app.get("/", (req, res) => {
