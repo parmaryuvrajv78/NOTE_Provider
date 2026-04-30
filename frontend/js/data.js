@@ -4,9 +4,9 @@
 
 // Automatically switch between local development and production backend
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-window.API_BASE = IS_LOCAL 
-    ? 'http://localhost:3000/api' 
-    : 'https://note-provider-backend.onrender.com/api'; // <-- REPLACE with your Render URL
+window.API_BASE = IS_LOCAL
+    ? 'http://localhost:3000/api'
+    : 'https://note-provider.onrender.com/api'; // <-- REPLACE with your Render URL
 
 const API_BASE = window.API_BASE;
 
