@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shniro Notes — Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2979FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <img src="icon.png" alt="Logo" style="width: 28px; height: 28px; border-radius: 6px; margin-right: 10px;">
+            Shniro <span class="blue">Notes</span>
+            <span class="nav-tag">ADMIN</span>
+        </div>
+        <div class="nav-brand-mobile" style="display: none;">
+            <img src="icon.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px;">
+            <span>Shniro Notes</span>
+        </div>
+        <div class="nav-right">
+            <button class="btn-logout" onclick="window.location.href='home.html'" style="color: var(--blue); border-color: transparent;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>View as Student</span>
+            </button>
+            <div class="nav-user" style="margin-left: 10px;">
+                <div class="avatar-circle">A</div>
+                <span>Admin</span>
+            </div>
+            <button class="btn-logout" id="logoutBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Logout</span>
+            </button>
+        </div>
+        <!-- Mobile Right Icon -->
+        <div class="nav-right-mobile" style="display: none;">
+            <button class="theme-toggle" id="mobileThemeToggle" style="border:none; background:transparent;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-icon orange">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-num" id="statPending">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon green">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+                <div class="stat-num" id="statStudents">0</div>
+                <div class="stat-label">Students</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon blue">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="stat-num" id="statMaterials">0</div>
+                <div class="stat-label">Materials</div>
+            </div>
+        </div>
+        
+        <!-- Deployment Stack (Premium Visual) -->
+        <div class="section-card stack-card" style="padding: 20px; margin-bottom: 24px; background: linear-gradient(135deg, var(--card), var(--input-bg));">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <div class="stat-icon blue" style="width: 32px; height: 32px; margin: 0;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <h3 style="font-size: 15px; font-weight: 700;">Deployment Stack</h3>
+            </div>
+            <div class="stack-grid">
+                <div class="stack-item">
+                    <span class="stack-label">Frontend</span>
+                    <div class="stack-value">
+                        <img src="https://assets.vercel.com/image/upload/v1588805177/repositories/vercel/logo.png" alt="Vercel" style="height: 12px; filter: grayscale(1) brightness(0.5);">
+                        <span>Vercel</span>
+                        <span class="status-dot online" id="statusVercel" title="Online"></span>
+                    </div>
+                </div>
+                <div class="stack-item">
+                    <span class="stack-label">Backend</span>
+                    <div class="stack-value">
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #00D1B2;"></div>
+                        <span>Render</span>
+                        <span class="status-dot online" id="statusRender" title="Online"></span>
+                    </div>
+                </div>
+                <div class="stack-item">
+                    <span class="stack-label">Auth/SQL</span>
+                    <div class="stack-value">
+                        <img src="https://supabase.com/dashboard/img/supabase-logo.svg" alt="Supabase" style="height: 12px;">
+                        <span>Supabase</span>
+                        <span class="status-dot" id="statusSupabase"></span>
+                    </div>
+                </div>
+                <div class="stack-item">
+                    <span class="stack-label">NoSQL</span>
+                    <div class="stack-value">
+                        <img src="https://www.mongodb.com/assets/images/global/leaf.png" alt="MongoDB" style="height: 12px;">
+                        <span>Atlas</span>
+                        <span class="status-dot" id="statusMongodb"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="pending">⏳ Pending</button>
+            <button class="tab-btn" data-tab="students">👨‍🎓 Students</button>
+            <button class="tab-btn" data-tab="materials">📚 Materials</button>
+        </div>
+
+        <!-- Pending Tab -->
+        <div class="tab-panel active" id="pendingTab">
+            <div class="section-card">
+                <h2>Pending Requests</h2>
+                <div id="pendingList"></div>
+                <div id="pendingEmpty" class="empty-state" style="display:none;"><h3>All clear!</h3></div>
+            </div>
+        </div>
+
+        <!-- Students Tab -->
+        <div class="tab-panel" id="studentsTab">
+            <div class="section-card">
+                <h2>All Students</h2>
+                <div id="studentsList"></div>
+                <div id="studentsEmpty" class="empty-state" style="display:none;"><h3>No students yet</h3></div>
+            </div>
+        </div>
+
+        <!-- Materials Tab -->
+        <div class="tab-panel" id="materialsTab">
+            <div class="welcome-card" style="box-shadow: none;">
+                <h2>Manage Materials</h2>
+                <div class="upload-area" id="uploadArea" onclick="toggleUploadForm()" style="border: 2px dashed var(--blue); padding: 40px; text-align: center; border-radius: var(--radius); cursor: pointer; color: var(--blue); background: var(--blue-light); margin-bottom: 20px;">
+                    <svg viewBox="0 0 24 24" style="width: 40px; height: 40px; margin-bottom: 10px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <h3>Click to Upload New Material</h3>
+                </div>
+
+                <div class="upload-form" id="uploadForm" style="display:none; padding: 24px; background: var(--card); border: 1px solid var(--input-border); border-radius: var(--radius); margin-bottom: 20px;">
+                    <form id="addMaterialForm">
+                        <div class="field">
+                            <label for="matTitle">Document Title</label>
+                            <input type="text" id="matTitle" placeholder="e.g. Maths Notes" required class="input-box" style="padding-left:14px;">
+                        </div>
+                        <div class="field">
+                            <label for="matSubject">Subject Name</label>
+                            <input type="text" id="matSubject" placeholder="e.g. Mathematics" required class="input-box" style="padding-left:14px;">
+                        </div>
+                        <div class="field">
+                            <label for="matFile">Select File</label>
+                            <input type="file" id="matFile" required class="input-box" style="padding-left:14px; padding-top:10px;">
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button>
+                            <button type="button" class="btn btn-ghost" onclick="toggleUploadForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="materialsAdminList" style="margin-top:14px;"></div>
+            </div>
+        </div>
+    </div>
+    <div id="toastBox" class="toast-box"></div>
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

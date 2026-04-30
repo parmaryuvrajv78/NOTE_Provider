@@ -1,0 +1,22 @@
+{
+  "name": "Shniro Notes",
+  "short_name": "Shniro",
+  "description": "Secure Study Material Portal for Students",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#EDF2F8",
+  "theme_color": "#2979FF",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
