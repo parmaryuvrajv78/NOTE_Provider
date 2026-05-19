@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/admin');
 const materialRoutes = require('./routes/materials');
 const userRoutes = require('./routes/users');
 const systemRoutes = require('./routes/system');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,8 +21,18 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins including file://
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
+
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
 
 // --- DEBUG ROUTES ---
 app.get('/api', (req, res) => {
@@ -34,6 +45,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/chat', chatRoutes);
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });

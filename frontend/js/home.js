@@ -215,4 +215,73 @@ if (mobTheme) {
 
 document.getElementById('matModal').addEventListener('click', (e) => { if (e.target.classList.contains('popup-overlay')) closeMatModal(); });
 
+// AI Assistant Logic
+(function() {
+    const aiBtn = document.getElementById('aiAssistantBtn');
+    const chatContainer = document.getElementById('chatContainer');
+    const closeChat = document.getElementById('closeChat');
+    const chatInput = document.getElementById('chatInput');
+    const sendMessage = document.getElementById('sendMessage');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    if (!aiBtn) return;
+
+    aiBtn.addEventListener('click', () => {
+        chatContainer.classList.toggle('active');
+    });
+
+    closeChat.addEventListener('click', () => {
+        chatContainer.classList.remove('active');
+    });
+
+    async function handleSend() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        addMessage(text, 'user');
+        chatInput.value = '';
+
+        // Show typing indicator
+        typingIndicator.style.display = 'block';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const response = await fetch(`${window.API_BASE}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await response.json();
+            
+            // Hide typing indicator
+            typingIndicator.style.display = 'none';
+
+            if (data.response) {
+                addMessage(data.response, 'ai');
+            } else {
+                addMessage("Sorry, I'm having trouble connecting. Please try again later.", 'ai');
+            }
+        } catch (error) {
+            typingIndicator.style.display = 'none';
+            addMessage("An error occurred. Please check your connection.", 'ai');
+        }
+    }
+
+    function addMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    sendMessage.addEventListener('click', handleSend);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSend();
+    });
+})();
+
 refreshMaterials();
