@@ -137,11 +137,32 @@ const DataStore = (() => {
         return await res.json();
     }
 
+    // --- Ratings ---
+    async function submitRating(userId, rating, review) {
+        const res = await fetch(`${API_BASE}/ratings/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, rating, review })
+        });
+        return await res.json();
+    }
+
+    async function getUserRating(userId) {
+        const res = await fetch(`${API_BASE}/ratings/user/${userId}`);
+        return await res.json();
+    }
+
+    async function getRatingStats() {
+        const res = await fetch(`${API_BASE}/ratings/stats`);
+        return await res.json();
+    }
+
     return {
         init, login, register,
         getAdminData, approvePending, rejectPending, removeUser,
         getMaterials, uploadMaterial, deleteMaterial,
         getFavorites, toggleFavorite, isFavorite,
+        submitRating, getUserRating, getRatingStats,
         getSystemStatus,
         setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin,
     };

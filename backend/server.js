@@ -13,6 +13,7 @@ const materialRoutes = require('./routes/materials');
 const userRoutes = require('./routes/users');
 const systemRoutes = require('./routes/system');
 const chatRoutes = require('./routes/chat');
+const ratingRoutes = require('./routes/ratings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,6 +47,7 @@ app.use('/api/materials', materialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/ratings', ratingRoutes);
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });

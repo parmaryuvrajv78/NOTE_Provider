@@ -79,6 +79,13 @@ function updateAccountSidebar() {
     setText('sidebarStatus', user.approved === false ? 'Pending' : 'Approved');
     setText('sidebarMaterialCount', String(allMaterials.length || 0));
     setText('sidebarSavedCount', String(savedCount || 0));
+    // Update average rating display
+    DataStore.getRatingStats().then(s => {
+        const avgEl = document.getElementById('sidebarAvgRating');
+        if (avgEl) {
+            avgEl.textContent = (s && s.averageRating) ? `${s.averageRating} ★ (${s.totalRatings})` : '-';
+        }
+    }).catch(() => {});
 }
 
 function openAccountSidebar() {
@@ -285,6 +292,80 @@ if (mobTheme) {
 }
 
 document.getElementById('matModal').addEventListener('click', (e) => { if (e.target.classList.contains('popup-overlay')) closeMatModal(); });
+
+// Rate App modal logic
+let selectedRating = 0;
+
+function openRateModal() {
+    const modal = document.getElementById('rateModal');
+    if (!modal) return;
+    document.getElementById('rateReview').value = '';
+    selectedRating = 0;
+    setStars(0);
+
+    const userId = user?.id;
+    if (userId) {
+        DataStore.getUserRating(userId).then(r => {
+            if (r) {
+                if (r.rating) setStars(r.rating);
+                if (r.review) document.getElementById('rateReview').value = r.review;
+            }
+        }).catch(() => {});
+    }
+
+    DataStore.getRatingStats().then(s => {
+        if (s && s.averageRating !== undefined) {
+            const avg = document.getElementById('sidebarAvgRating');
+            if (avg) avg.textContent = `${s.averageRating} ★ (${s.totalRatings})`;
+            const el = document.getElementById('rateAvgDisplay');
+            if (el) el.textContent = `Average: ${s.averageRating} (${s.totalRatings})`;
+        }
+    }).catch(() => {});
+
+    modal.style.display = 'flex';
+}
+
+function closeRateModal() { const modal = document.getElementById('rateModal'); if (modal) modal.style.display = 'none'; }
+
+function setStars(rating) {
+    selectedRating = Number(rating) || 0;
+    const stars = document.querySelectorAll('#rateStars .rate-star');
+    stars.forEach(s => {
+        const val = Number(s.dataset.value);
+        s.textContent = val <= selectedRating ? '★' : '☆';
+        s.classList.toggle('active', val <= selectedRating);
+    });
+}
+
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('rate-star')) {
+        setStars(e.target.dataset.value);
+    }
+});
+
+document.getElementById('rateAppBtn')?.addEventListener('click', openRateModal);
+document.getElementById('submitRatingBtn')?.addEventListener('click', async () => {
+    if (!user) { showToast('Please log in to submit rating', 'info'); return; }
+    if (!selectedRating || selectedRating < 1) { showToast('Please select a rating (1-5)', 'info'); return; }
+    const review = document.getElementById('rateReview').value.trim();
+    try {
+        const res = await DataStore.submitRating(user.id, selectedRating, review);
+        if (res && (res.message || res.rating)) {
+            showToast('Rating saved. Thank you!', 'success');
+            closeRateModal();
+            DataStore.getRatingStats().then(s => {
+                if (s && s.averageRating !== undefined) {
+                    const avgEl = document.getElementById('sidebarAvgRating');
+                    if (avgEl) avgEl.textContent = `${s.averageRating} ★ (${s.totalRatings})`;
+                }
+            }).catch(() => {});
+        } else {
+            showToast(res.error || 'Unable to save rating', 'error');
+        }
+    } catch (err) {
+        showToast('Server error while saving rating', 'error');
+    }
+});
 
 // AI Assistant Logic
 (function() {
