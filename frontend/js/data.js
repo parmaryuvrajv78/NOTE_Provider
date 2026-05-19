@@ -10,7 +10,7 @@ const IS_LOCAL = window.location.hostname === 'localhost' ||
 
 window.API_BASE = IS_LOCAL
     ? 'http://localhost:3000/api'
-    : 'https://note-provider.onrender.com/api'; 
+    : 'https://note-provider-nd4p.onrender.com/api'; 
 
 const API_BASE = window.API_BASE;
 
