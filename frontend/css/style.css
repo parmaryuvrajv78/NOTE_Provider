@@ -621,6 +621,88 @@ body.dark .nav-tag {
     height: 14px;
 }
 
+/* Subject page navbar */
+.subject-nav-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 12px;
+}
+
+.subject-back-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    background: var(--input-bg);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.subject-back-btn:hover {
+    color: var(--blue);
+    border-color: var(--blue);
+    background: var(--blue-light);
+}
+
+.subject-brand-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.subject-brand .nav-tag {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .subject-navbar .subject-nav-left {
+        flex: 1;
+        gap: 10px;
+    }
+
+    .subject-navbar .subject-brand {
+        display: none !important;
+    }
+
+    .subject-navbar .subject-brand-mobile {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        margin-right: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .subject-navbar .subject-brand-mobile span {
+        display: inline !important;
+        white-space: nowrap;
+    }
+
+    .subject-navbar .subject-brand-mobile img {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(41, 121, 255, 0.2);
+    }
+
+    .subject-back-btn {
+        width: 40px;
+        height: 40px;
+    }
+}
+
 /* ===== MAIN CONTENT ===== */
 .main-content {
     max-width: 960px;
@@ -2046,6 +2128,8 @@ img {
     border-radius: 16px;
     font-size: 13px;
     line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 .message.ai {
     background: var(--input-bg);
@@ -2088,6 +2172,12 @@ img {
     align-items: center;
     justify-content: center;
     transition: var(--transition);
+}
+
+.chat-send-btn:disabled,
+.chat-input:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .typing-indicator {

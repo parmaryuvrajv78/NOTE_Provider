@@ -241,6 +241,8 @@ document.getElementById('matModal').addEventListener('click', (e) => { if (e.tar
     const sendMessage = document.getElementById('sendMessage');
     const chatMessages = document.getElementById('chatMessages');
     const typingIndicator = document.getElementById('typingIndicator');
+    const chatHistory = [];
+    let isSending = false;
 
     if (!aiBtn) return;
 
@@ -254,13 +256,16 @@ document.getElementById('matModal').addEventListener('click', (e) => { if (e.tar
 
     async function handleSend() {
         const text = chatInput.value.trim();
-        if (!text) return;
+        if (!text || isSending) return;
 
-        // Add user message
         addMessage(text, 'user');
+        chatHistory.push({ role: 'user', content: text });
+        trimChatHistory();
         chatInput.value = '';
 
-        // Show typing indicator
+        isSending = true;
+        chatInput.disabled = true;
+        sendMessage.disabled = true;
         typingIndicator.style.display = 'block';
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -268,23 +273,59 @@ document.getElementById('matModal').addEventListener('click', (e) => { if (e.tar
             const response = await fetch(`${window.API_BASE}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({
+                    message: text,
+                    history: chatHistory.slice(0, -1).slice(-10),
+                    context: buildAssistantContext(text)
+                })
             });
 
-            const data = await response.json();
-            
-            // Hide typing indicator
-            typingIndicator.style.display = 'none';
+            const data = await response.json().catch(() => ({}));
 
-            if (data.response) {
-                addMessage(data.response, 'ai');
-            } else {
-                addMessage("Sorry, I'm having trouble connecting. Please try again later.", 'ai');
-            }
-        } catch (error) {
-            typingIndicator.style.display = 'none';
-            addMessage("An error occurred. Please check your connection.", 'ai');
+        if (response.ok && data.response) {
+            addMessage(data.response, 'ai');
+            chatHistory.push({ role: 'assistant', content: data.response });
+            trimChatHistory();
+        } else {
+            addMessage(data.error || "Sorry, I'm having trouble answering right now. Please try again.", 'ai');
         }
+        } catch (error) {
+            addMessage("I couldn't reach the assistant server. Please check your connection and make sure the backend is running.", 'ai');
+        } finally {
+            isSending = false;
+            chatInput.disabled = false;
+            sendMessage.disabled = false;
+            typingIndicator.style.display = 'none';
+            chatInput.focus();
+        }
+    }
+
+    function buildAssistantContext(prompt) {
+        const promptWords = prompt.toLowerCase().split(/\W+/).filter(word => word.length > 2);
+        const scoredMaterials = allMaterials
+            .map(material => {
+                const searchable = `${material.title || ''} ${material.subject || ''} ${material.category || ''}`.toLowerCase();
+                const score = promptWords.reduce((sum, word) => sum + (searchable.includes(word) ? 1 : 0), 0);
+                return { material, score };
+            })
+            .sort((a, b) => b.score - a.score);
+
+        const relevantMaterials = scoredMaterials.some(item => item.score > 0)
+            ? scoredMaterials.filter(item => item.score > 0)
+            : scoredMaterials;
+
+        const topMaterials = relevantMaterials
+            .slice(0, 12)
+            .map(item => ({
+                title: item.material.title,
+                subject: item.material.subject,
+                category: item.material.category || item.material.type || 'Material'
+            }));
+
+        return {
+            userName: user?.name || 'Student',
+            materials: topMaterials
+        };
     }
 
     function addMessage(text, sender) {
@@ -295,9 +336,18 @@ document.getElementById('matModal').addEventListener('click', (e) => { if (e.tar
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
+    function trimChatHistory() {
+        if (chatHistory.length > 20) {
+            chatHistory.splice(0, chatHistory.length - 20);
+        }
+    }
+
     sendMessage.addEventListener('click', handleSend);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSend();
+        }
     });
 })();
 
