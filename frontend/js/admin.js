@@ -242,7 +242,18 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
 
         formData.append('questions', JSON.stringify(questions));
     } else {
-        formData.append('file', document.getElementById('matFile').files[0]);
+        const fileInput = document.getElementById('matFile');
+        const file = fileInput.files && fileInput.files[0];
+
+        if (!file) {
+            showToast('Please select a file to upload', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Upload';
+            fileInput.focus();
+            return;
+        }
+
+        formData.append('file', file);
     }
 
     try {

@@ -191,17 +191,9 @@ function openVideoModal(m) {
     });
     
     if (videoId) {
-        // Use basic YouTube embed URL
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?modestbranding=1`;
+        // Keep the mobile player inline and avoid reloading the iframe after it starts.
+        const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`;
         iframe.src = embedUrl;
-        
-        // Show error if video fails to load after 5 seconds
-        setTimeout(() => {
-            if (iframe.src && !iframe.contentDocument) {
-                // Try simple version without parameters
-                iframe.src = `https://www.youtube.com/embed/${videoId}`;
-            }
-        }, 5000);
     } else {
         // No valid YouTube ID found
         console.warn('Could not extract YouTube ID from:', m.fileUrl);
@@ -212,13 +204,7 @@ function openVideoModal(m) {
     }
     
     modal.style.display = 'flex';
-    
-    // Try to lock screen orientation on mobile
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(err => {
-            console.log('Orientation lock not supported');
-        });
-    }
+    document.body.classList.add('video-open');
 }
 
 function closeVideoModal() { 
@@ -231,11 +217,8 @@ function closeVideoModal() {
     if (iframe) {
         iframe.src = '';
     }
-    
-    // Unlock screen orientation
-    if (screen.orientation && screen.orientation.unlock) {
-        screen.orientation.unlock();
-    }
+
+    document.body.classList.remove('video-open');
 }
 
 // Modal Logic for Notes/PDFs
