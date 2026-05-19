@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 // 6. Materials: Upload
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
-        const { title, subject, category, link } = req.body;
+        const { title, subject, category, link, questions } = req.body;
         const file = req.file;
 
         // Handle Video Links
@@ -34,6 +34,27 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             });
             await newMat.save();
             return res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+        }
+
+        // Handle Quiz Questions
+        if (category === 'Quiz' && questions) {
+            try {
+                const parsedQuestions = typeof questions === 'string' ? JSON.parse(questions) : questions;
+                
+                const newMat = new Material({
+                    title,
+                    subject,
+                    category: 'Quiz',
+                    type: 'QUIZ',
+                    size: `${parsedQuestions.length} Questions`,
+                    questions: parsedQuestions,
+                    fileName: 'quiz'
+                });
+                await newMat.save();
+                return res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+            } catch (err) {
+                return res.status(400).json({ success: false, message: 'Invalid quiz format' });
+            }
         }
 
         // Handle File Uploads

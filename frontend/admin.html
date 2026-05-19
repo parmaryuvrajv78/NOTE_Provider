@@ -176,6 +176,11 @@
                             <label for="matLink">Video Link (URL)</label>
                             <input type="url" id="matLink" placeholder="e.g. https://youtube.com/..." class="input-box" style="padding-left:14px;">
                         </div>
+                        <div id="quizFieldGroup" style="display: none;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 12px;">Quiz Questions</label>
+                            <div id="questionsContainer" style="max-height: 400px; overflow-y: auto;"></div>
+                            <button type="button" class="btn btn-secondary" onclick="addQuizQuestion()" style="margin-top: 12px; width: 100%;">+ Add Question</button>
+                        </div>
                         <div style="display:flex; gap:8px;">
                             <button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button>
                             <button type="button" class="btn btn-ghost" onclick="toggleUploadForm()">Cancel</button>

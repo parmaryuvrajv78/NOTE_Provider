@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+const questionSchema = new mongoose.Schema({
+    question: String,
+    options: [String],
+    correctAnswer: Number,  // Index of correct option
+    explanation: String
+});
+
 const materialSchema = new mongoose.Schema({
     title: String,
     subject: String,
@@ -8,6 +15,8 @@ const materialSchema = new mongoose.Schema({
     size: String,
     fileUrl: String,
     fileName: String,
+    // Quiz-specific fields
+    questions: [questionSchema],  // Array of questions for quizzes
     createdAt: { type: Date, default: Date.now }
 });
 

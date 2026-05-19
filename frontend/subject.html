@@ -102,6 +102,33 @@
         </div>
     </div>
 
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="popup-overlay quiz-overlay" style="display:none;">
+        <div class="quiz-modal-card">
+            <button class="mat-modal-close" onclick="closeQuizModal()" style="position: absolute; top: 12px; right: 12px; z-index: 10;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="quiz-header">
+                <h2 id="quizTitle">Quiz Title</h2>
+                <div class="quiz-progress">
+                    <span id="quizProgress">1 of 5</span>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="quiz-body">
+                <div id="questionDisplay" class="question-display"></div>
+                <div id="optionsDisplay" class="options-display"></div>
+            </div>
+            <div class="quiz-footer">
+                <button class="btn btn-secondary" onclick="previousQuestion()" id="prevBtn" style="display:none;">← Previous</button>
+                <button class="btn btn-primary" onclick="nextQuestion()" id="nextBtn">Next →</button>
+                <button class="btn btn-success" onclick="submitQuiz()" id="submitBtn" style="display:none;">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toastBox" class="toast-box"></div>
 
     <script src="js/data.js"></script>

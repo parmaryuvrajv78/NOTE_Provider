@@ -249,6 +249,12 @@ function openMatModal(id) {
         return;
     }
 
+    // If it's a quiz, open quiz modal instead
+    if (m.category === 'Quiz' && m.questions && m.questions.length > 0) {
+        openQuizModal(m);
+        return;
+    }
+
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
@@ -292,6 +298,117 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
     });
+});
+
+// ===== QUIZ LOGIC =====
+let currentQuiz = null;
+let currentQuestionIndex = 0;
+let quizAnswers = {};
+
+function openQuizModal(quizMaterial) {
+    if (!quizMaterial.questions || quizMaterial.questions.length === 0) {
+        showToast('No questions in this quiz', 'error');
+        return;
+    }
+
+    currentQuiz = quizMaterial;
+    currentQuestionIndex = 0;
+    quizAnswers = {};
+
+    document.getElementById('quizTitle').textContent = quizMaterial.title;
+    document.getElementById('quizModal').style.display = 'flex';
+
+    displayQuestion();
+}
+
+function closeQuizModal() {
+    document.getElementById('quizModal').style.display = 'none';
+    currentQuiz = null;
+    currentQuestionIndex = 0;
+    quizAnswers = {};
+}
+
+function displayQuestion() {
+    if (!currentQuiz || !currentQuiz.questions) return;
+
+    const question = currentQuiz.questions[currentQuestionIndex];
+    const totalQuestions = currentQuiz.questions.length;
+
+    // Update progress
+    const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+    document.getElementById('quizProgress').textContent = `${currentQuestionIndex + 1} of ${totalQuestions}`;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    // Display question
+    document.getElementById('questionDisplay').textContent = question.question;
+
+    // Display options
+    const optionsContainer = document.getElementById('optionsDisplay');
+    optionsContainer.innerHTML = '';
+
+    question.options.forEach((option, index) => {
+        const optionBtn = document.createElement('button');
+        optionBtn.className = 'quiz-option';
+        optionBtn.textContent = option;
+        
+        if (quizAnswers[currentQuestionIndex] === index) {
+            optionBtn.classList.add('selected');
+        }
+
+        optionBtn.onclick = () => selectOption(index);
+        optionsContainer.appendChild(optionBtn);
+    });
+
+    // Update button visibility
+    document.getElementById('prevBtn').style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = currentQuestionIndex < totalQuestions - 1 ? 'block' : 'none';
+    document.getElementById('submitBtn').style.display = currentQuestionIndex === totalQuestions - 1 ? 'block' : 'none';
+}
+
+function selectOption(index) {
+    quizAnswers[currentQuestionIndex] = index;
+    displayQuestion();
+}
+
+function previousQuestion() {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        displayQuestion();
+    }
+}
+
+function nextQuestion() {
+    if (currentQuestionIndex < currentQuiz.questions.length - 1) {
+        currentQuestionIndex++;
+        displayQuestion();
+    }
+}
+
+function submitQuiz() {
+    if (!currentQuiz || !currentQuiz.questions) return;
+
+    let score = 0;
+    currentQuiz.questions.forEach((question, index) => {
+        if (quizAnswers[index] === question.correctAnswer) {
+            score++;
+        }
+    });
+
+    const percentage = Math.round((score / currentQuiz.questions.length) * 100);
+    showToast(`Quiz Submitted! Score: ${score}/${currentQuiz.questions.length} (${percentage}%)`, 'success');
+    closeQuizModal();
+}
+
+// Close quiz modal when clicking overlay
+document.addEventListener('DOMContentLoaded', function() {
+    const quizModal = document.getElementById('quizModal');
+    if (quizModal) {
+        quizModal.addEventListener('click', (e) => {
+            if (e.target.classList.contains('popup-overlay') || e.target.classList.contains('quiz-overlay')) {
+                closeQuizModal();
+            }
+        });
+    }
 });
 
 loadSubjectData();

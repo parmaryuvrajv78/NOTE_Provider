@@ -182,14 +182,24 @@ document.getElementById('matCategory').addEventListener('change', (e) => {
     const val = e.target.value;
     const fileGroup = document.getElementById('fileFieldGroup');
     const linkGroup = document.getElementById('linkFieldGroup');
+    const quizGroup = document.getElementById('quizFieldGroup');
+    
     if (val === 'Video') {
         fileGroup.style.display = 'none';
         linkGroup.style.display = 'block';
+        quizGroup.style.display = 'none';
         document.getElementById('matFile').required = false;
         document.getElementById('matLink').required = true;
+    } else if (val === 'Quiz') {
+        fileGroup.style.display = 'none';
+        linkGroup.style.display = 'none';
+        quizGroup.style.display = 'block';
+        document.getElementById('matFile').required = false;
+        document.getElementById('matLink').required = false;
     } else {
         fileGroup.style.display = 'block';
         linkGroup.style.display = 'none';
+        quizGroup.style.display = 'none';
         document.getElementById('matFile').required = true;
         document.getElementById('matLink').required = false;
     }
@@ -209,6 +219,28 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
     
     if (category === 'Video') {
         formData.append('link', document.getElementById('matLink').value);
+    } else if (category === 'Quiz') {
+        // Collect quiz questions
+        const questions = [];
+        document.querySelectorAll('.question-input-group').forEach((group, idx) => {
+            const q = group.querySelector('.question-text').value.trim();
+            const options = Array.from(group.querySelectorAll('.option-input')).map(opt => opt.value.trim());
+            const correct = parseInt(group.querySelector('.correct-answer-select').value);
+            const explanation = group.querySelector('.explanation-input').value.trim();
+            
+            if (q && options.filter(o => o).length >= 2) {
+                questions.push({ question: q, options, correctAnswer: correct, explanation });
+            }
+        });
+
+        if (questions.length === 0) {
+            showToast('Add at least one complete question', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Upload';
+            return;
+        }
+
+        formData.append('questions', JSON.stringify(questions));
     } else {
         formData.append('file', document.getElementById('matFile').files[0]);
     }
@@ -218,9 +250,11 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
         if (res.success) {
             showToast('Uploaded successfully!', 'success');
             document.getElementById('addMaterialForm').reset();
+            document.getElementById('questionsContainer').innerHTML = '';
             // Reset fields
             document.getElementById('fileFieldGroup').style.display = 'block';
             document.getElementById('linkFieldGroup').style.display = 'none';
+            document.getElementById('quizFieldGroup').style.display = 'none';
             document.getElementById('matFile').required = true;
             document.getElementById('matLink').required = false;
             
@@ -236,6 +270,44 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
         btn.textContent = 'Upload';
     }
 });
+
+// Quiz Question Management
+function addQuizQuestion() {
+    const container = document.getElementById('questionsContainer');
+    const qNum = container.querySelectorAll('.question-input-group').length + 1;
+    
+    const questionGroup = document.createElement('div');
+    questionGroup.className = 'question-input-group';
+    questionGroup.style.cssText = 'padding: 16px; background: var(--bg); border: 1px solid var(--input-border); border-radius: 8px; margin-bottom: 12px;';
+    
+    questionGroup.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <label style="font-weight: 600; font-size: 14px;">Question ${qNum}</label>
+            <button type="button" onclick="this.closest('.question-input-group').remove()" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+        </div>
+        <input type="text" class="question-text input-box" placeholder="Enter question" required style="padding-left: 12px; margin-bottom: 12px; width: 100%;">
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 12px; color: var(--text-light); display: block; margin-bottom: 6px;">Options</label>
+            <input type="text" class="option-input input-box" placeholder="Option 1" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
+            <input type="text" class="option-input input-box" placeholder="Option 2" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
+            <input type="text" class="option-input input-box" placeholder="Option 3" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
+            <input type="text" class="option-input input-box" placeholder="Option 4" style="padding-left: 12px; width: 100%;">
+        </div>
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 12px; color: var(--text-light); display: block; margin-bottom: 6px;">Correct Answer</label>
+            <select class="correct-answer-select input-box" required style="padding-left: 12px; -webkit-appearance: none; appearance: none;">
+                <option value="">Select...</option>
+                <option value="0">Option 1</option>
+                <option value="1">Option 2</option>
+                <option value="2">Option 3</option>
+                <option value="3">Option 4</option>
+            </select>
+        </div>
+        <input type="text" class="explanation-input input-box" placeholder="Explanation (optional)" style="padding-left: 12px; width: 100%;">
+    `;
+    
+    container.appendChild(questionGroup);
+}
 
 // --- Tab Logic ---
 document.querySelectorAll('.tab-btn').forEach(btn => {
