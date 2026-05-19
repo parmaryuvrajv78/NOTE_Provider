@@ -108,31 +108,21 @@ function renderMaterials() {
         if (!grouped[subKey]) {
             grouped[subKey] = {
                 title: m.subject.trim(), // Use the first item's case as the display title
-                items: []
+                count: 0
             };
         }
-        grouped[subKey].items.push(m);
+        grouped[subKey].count++;
     });
 
-    for (const [subKey, group] of Object.entries(grouped)) {
+    if (currentView === 'saved') {
+        // Render saved materials directly
         const section = document.createElement('div');
         section.className = 'subject-section';
-        section.style.marginBottom = '32px';
-
-        const title = document.createElement('h3');
-        title.textContent = group.title; // Natural casing (e.g. "Mathematics")
-        title.className = 'subject-title';
-        title.style.color = 'var(--blue)';
-        title.style.marginBottom = '12px';
-        title.style.fontSize = '18px';
-        title.style.fontWeight = '700';
-        section.appendChild(title);
-
         const grid = document.createElement('div');
         grid.className = 'material-grid';
 
-        group.items.forEach(m => {
-            const isFav = DataStore.isFavorite(m.id || m._id);
+        list.forEach(m => {
+            const isFav = true;
             const card = document.createElement('div');
             card.className = 'mat-card';
             card.innerHTML = `
@@ -142,8 +132,8 @@ function renderMaterials() {
                         <div class="mat-title">${esc(m.title)}</div>
                         <span class="mat-subject">${esc(m.subject)}</span>
                     </div>
-                    <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${m.id || m._id}')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <button class="fav-btn active" onclick="toggleFav(event, '${m.id || m._id}')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                 </div>
                 <div onclick="openMatModal('${m.id || m._id}')" style="margin-top: 14px; cursor:pointer;">
@@ -155,9 +145,36 @@ function renderMaterials() {
             `;
             grid.appendChild(card);
         });
-
         section.appendChild(grid);
         container.appendChild(section);
+    } else {
+        // Render Subject Cards
+        const grid = document.createElement('div');
+        grid.className = 'material-grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(160px, 1fr))';
+        
+        for (const [subKey, group] of Object.entries(grouped)) {
+            const card = document.createElement('div');
+            card.className = 'mat-card';
+            card.style.cursor = 'pointer';
+            card.style.display = 'flex';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'center';
+            card.style.justifyContent = 'center';
+            card.style.padding = '30px 20px';
+            card.onclick = () => window.location.href = `subject.html?name=${encodeURIComponent(group.title)}`;
+            
+            card.innerHTML = `
+                <div class="mat-icon-box" style="width: 56px; height: 56px; margin-bottom: 16px;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 6px;">${esc(group.title)}</h3>
+                <span style="font-size: 13px; color: var(--text-gray);">${group.count} Materials</span>
+            `;
+            grid.appendChild(card);
+        }
+        
+        container.appendChild(grid);
     }
 }
 

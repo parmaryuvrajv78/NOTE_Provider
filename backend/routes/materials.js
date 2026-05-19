@@ -18,9 +18,25 @@ router.get('/', async (req, res) => {
 // 6. Materials: Upload
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
-        const { title, subject } = req.body;
+        const { title, subject, category, link } = req.body;
         const file = req.file;
 
+        // Handle Video Links
+        if (category === 'Video' && link) {
+            const newMat = new Material({
+                title,
+                subject,
+                category: 'Video',
+                type: 'LINK',
+                size: 'Link',
+                fileUrl: link,
+                fileName: 'video_link'
+            });
+            await newMat.save();
+            return res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+        }
+
+        // Handle File Uploads
         if (!file) {
             return res.status(400).json({ success: false, message: 'No file uploaded.' });
         }
@@ -52,6 +68,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         const newMat = new Material({
             title,
             subject,
+            category: category || 'Notes',
             type: path.extname(file.originalname).substring(1).toUpperCase(),
             size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
             fileUrl: fileUrl,
@@ -99,6 +116,10 @@ router.get('/download/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Material not found' });
         }
 
+        if (mat.type === 'LINK') {
+            return res.redirect(mat.fileUrl);
+        }
+
         const bucketName = process.env.SUPABASE_BUCKET;
 
         // Get public URL with download param
@@ -123,6 +144,10 @@ router.get('/view/:id', async (req, res) => {
         const mat = await Material.findById(req.params.id);
         if (!mat) {
             return res.status(404).json({ success: false, message: 'Material not found' });
+        }
+
+        if (mat.type === 'LINK') {
+            return res.redirect(mat.fileUrl);
         }
 
         const bucketName = process.env.SUPABASE_BUCKET;

@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const materialSchema = new mongoose.Schema({
     title: String,
     subject: String,
+    category: String,
     type: String,
     size: String,
     fileUrl: String,

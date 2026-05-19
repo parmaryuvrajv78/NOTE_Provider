@@ -178,22 +178,52 @@ function toggleUploadForm() {
     area.style.display = visible ? 'block' : 'none';
 }
 
+document.getElementById('matCategory').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const fileGroup = document.getElementById('fileFieldGroup');
+    const linkGroup = document.getElementById('linkFieldGroup');
+    if (val === 'Video') {
+        fileGroup.style.display = 'none';
+        linkGroup.style.display = 'block';
+        document.getElementById('matFile').required = false;
+        document.getElementById('matLink').required = true;
+    } else {
+        fileGroup.style.display = 'block';
+        linkGroup.style.display = 'none';
+        document.getElementById('matFile').required = true;
+        document.getElementById('matLink').required = false;
+    }
+});
+
 document.getElementById('addMaterialForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true;
     btn.textContent = 'Uploading...';
 
+    const category = document.getElementById('matCategory').value;
     const formData = new FormData();
     formData.append('title', document.getElementById('matTitle').value);
     formData.append('subject', document.getElementById('matSubject').value);
-    formData.append('file', document.getElementById('matFile').files[0]);
+    formData.append('category', category);
+    
+    if (category === 'Video') {
+        formData.append('link', document.getElementById('matLink').value);
+    } else {
+        formData.append('file', document.getElementById('matFile').files[0]);
+    }
 
     try {
         const res = await DataStore.uploadMaterial(formData);
         if (res.success) {
             showToast('Uploaded successfully!', 'success');
             document.getElementById('addMaterialForm').reset();
+            // Reset fields
+            document.getElementById('fileFieldGroup').style.display = 'block';
+            document.getElementById('linkFieldGroup').style.display = 'none';
+            document.getElementById('matFile').required = true;
+            document.getElementById('matLink').required = false;
+            
             toggleUploadForm();
             refreshData();
         } else {

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Materials — Shniro Notes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="icon.png">
+    <meta name="theme-color" content="#2979FF">
+</head>
+<body>
+    <header class="app-header">
+        <nav class="navbar">
+            <div class="nav-brand" style="display:flex; align-items:center;">
+                <button onclick="window.history.back()" style="background:none; border:none; color:var(--text); cursor:pointer; margin-right:16px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span id="subjectTitle">Subject Materials</span>
+            </div>
+            <div class="nav-right">
+                <div class="nav-user">
+                    <div class="avatar-circle" id="userAvatar">S</div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="tabs" style="margin-bottom: 24px;">
+            <button class="tab-btn active" data-tab="Notes">Notes</button>
+            <button class="tab-btn" data-tab="Video">Videos</button>
+            <button class="tab-btn" data-tab="Quiz">Quizzes</button>
+        </div>
+
+        <div class="tab-panel active" id="NotesTab">
+            <div class="material-grid" id="notesContainer"></div>
+            <div id="notesEmpty" class="empty-state" style="display:none;"><h3>No notes available</h3></div>
+        </div>
+
+        <div class="tab-panel" id="VideoTab">
+            <div class="material-grid" id="videoContainer"></div>
+            <div id="videoEmpty" class="empty-state" style="display:none;"><h3>No videos available</h3></div>
+        </div>
+
+        <div class="tab-panel" id="QuizTab">
+            <div class="material-grid" id="quizContainer"></div>
+            <div id="quizEmpty" class="empty-state" style="display:none;"><h3>No quizzes available</h3></div>
+        </div>
+    </main>
+
+    <!-- Material Modal -->
+    <div id="matModal" class="popup-overlay" style="display:none;">
+        <div class="mat-modal-card">
+            <button class="mat-modal-close" onclick="closeMatModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="mat-modal-head">
+                <div class="mat-icon-box" style="width:48px;height:48px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div>
+                    <h2 id="modalTitle">Title</h2>
+                    <span class="mat-subject" id="modalSubject">Subject</span>
+                </div>
+            </div>
+            <div class="mat-modal-body">
+                <div class="mat-tags" id="modalTags"></div>
+            </div>
+            <div class="mat-modal-btns">
+                <button class="btn btn-secondary" id="modalView" style="background: var(--blue-light); color: var(--blue);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View
+                </button>
+                <button class="btn btn-primary" id="modalDownload">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="videoModal" class="popup-overlay video-overlay" style="display:none;">
+        <div class="video-modal-card">
+            <button class="mat-modal-close" onclick="closeVideoModal()" style="position: absolute; top: 12px; right: 12px; z-index: 10;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="video-container">
+                <iframe 
+                    id="videoIframe" 
+                    style="width: 100%; height: 100%; border: 0;" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                    loading="lazy"
+                    title="Video Player">
+                </iframe>
+            </div>
+            <div class="video-info">
+                <h3 id="videoModalTitle">Video Title</h3>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastBox" class="toast-box"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/subject.js"></script>
+</body>
+</html>

@@ -161,8 +161,20 @@
                             <input type="text" id="matSubject" placeholder="e.g. Mathematics" required class="input-box" style="padding-left:14px;">
                         </div>
                         <div class="field">
+                            <label for="matCategory">Category</label>
+                            <select id="matCategory" required class="input-box" style="padding-left:14px; -webkit-appearance: none; appearance: none;">
+                                <option value="Notes">Notes (PDF, Docs)</option>
+                                <option value="Video">Video Lectures (Link)</option>
+                                <option value="Quiz">Quizzes / Assignments</option>
+                            </select>
+                        </div>
+                        <div class="field" id="fileFieldGroup">
                             <label for="matFile">Select File</label>
-                            <input type="file" id="matFile" required class="input-box" style="padding-left:14px; padding-top:10px;">
+                            <input type="file" id="matFile" class="input-box" style="padding-left:14px; padding-top:10px;">
+                        </div>
+                        <div class="field" id="linkFieldGroup" style="display: none;">
+                            <label for="matLink">Video Link (URL)</label>
+                            <input type="url" id="matLink" placeholder="e.g. https://youtube.com/..." class="input-box" style="padding-left:14px;">
                         </div>
                         <div style="display:flex; gap:8px;">
                             <button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button>
