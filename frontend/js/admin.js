@@ -178,32 +178,60 @@ function toggleUploadForm() {
     area.style.display = visible ? 'block' : 'none';
 }
 
-document.getElementById('matCategory').addEventListener('change', (e) => {
-    const val = e.target.value;
+function updateUploadFields() {
+    const val = document.getElementById('matCategory').value;
+    const videoSource = document.getElementById('matVideoSource').value;
     const fileGroup = document.getElementById('fileFieldGroup');
     const linkGroup = document.getElementById('linkFieldGroup');
     const quizGroup = document.getElementById('quizFieldGroup');
+    const videoSourceGroup = document.getElementById('videoSourceGroup');
+    const fileInput = document.getElementById('matFile');
+    const linkInput = document.getElementById('matLink');
+    const fileLabel = document.getElementById('matFileLabel');
     
     if (val === 'Video') {
-        fileGroup.style.display = 'none';
-        linkGroup.style.display = 'block';
+        videoSourceGroup.style.display = 'block';
         quizGroup.style.display = 'none';
-        document.getElementById('matFile').required = false;
-        document.getElementById('matLink').required = true;
+
+        if (videoSource === 'file') {
+            fileGroup.style.display = 'block';
+            linkGroup.style.display = 'none';
+            fileInput.required = true;
+            linkInput.required = false;
+            fileInput.accept = 'video/*';
+            fileLabel.textContent = 'Select Video File';
+        } else {
+            fileGroup.style.display = 'none';
+            linkGroup.style.display = 'block';
+            fileInput.required = false;
+            linkInput.required = true;
+            fileInput.accept = '';
+            fileLabel.textContent = 'Select File';
+        }
     } else if (val === 'Quiz') {
+        videoSourceGroup.style.display = 'none';
         fileGroup.style.display = 'none';
         linkGroup.style.display = 'none';
         quizGroup.style.display = 'block';
-        document.getElementById('matFile').required = false;
-        document.getElementById('matLink').required = false;
+        fileInput.required = false;
+        linkInput.required = false;
+        fileInput.accept = '';
+        fileLabel.textContent = 'Select File';
     } else {
+        videoSourceGroup.style.display = 'none';
         fileGroup.style.display = 'block';
         linkGroup.style.display = 'none';
         quizGroup.style.display = 'none';
-        document.getElementById('matFile').required = true;
-        document.getElementById('matLink').required = false;
+        fileInput.required = true;
+        linkInput.required = false;
+        fileInput.accept = '.pdf,.doc,.docx,.ppt,.pptx,.txt';
+        fileLabel.textContent = 'Select File';
     }
-});
+}
+
+document.getElementById('matCategory').addEventListener('change', updateUploadFields);
+document.getElementById('matVideoSource').addEventListener('change', updateUploadFields);
+updateUploadFields();
 
 document.getElementById('addMaterialForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -218,7 +246,43 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
     formData.append('category', category);
     
     if (category === 'Video') {
-        formData.append('link', document.getElementById('matLink').value);
+        const videoSource = document.getElementById('matVideoSource').value;
+        formData.append('videoSource', videoSource);
+
+        if (videoSource === 'file') {
+            const fileInput = document.getElementById('matFile');
+            const file = fileInput.files && fileInput.files[0];
+
+            if (!file) {
+                showToast('Please select a video file to upload', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Upload';
+                fileInput.focus();
+                return;
+            }
+
+            if (file.type && !file.type.startsWith('video/')) {
+                showToast('Please select a valid video file', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Upload';
+                fileInput.focus();
+                return;
+            }
+
+            formData.append('file', file);
+        } else {
+            const link = document.getElementById('matLink').value.trim();
+
+            if (!link) {
+                showToast('Please enter a video link', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Upload';
+                document.getElementById('matLink').focus();
+                return;
+            }
+
+            formData.append('link', link);
+        }
     } else if (category === 'Quiz') {
         // Collect quiz questions
         const questions = [];
@@ -262,12 +326,7 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
             showToast('Uploaded successfully!', 'success');
             document.getElementById('addMaterialForm').reset();
             document.getElementById('questionsContainer').innerHTML = '';
-            // Reset fields
-            document.getElementById('fileFieldGroup').style.display = 'block';
-            document.getElementById('linkFieldGroup').style.display = 'none';
-            document.getElementById('quizFieldGroup').style.display = 'none';
-            document.getElementById('matFile').required = true;
-            document.getElementById('matLink').required = false;
+            updateUploadFields();
             
             toggleUploadForm();
             refreshData();

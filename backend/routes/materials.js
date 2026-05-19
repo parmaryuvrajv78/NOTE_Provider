@@ -62,6 +62,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(400).json({ success: false, message: 'No file uploaded.' });
         }
 
+        if (category === 'Video' && file.mimetype && !file.mimetype.startsWith('video/')) {
+            return res.status(400).json({ success: false, message: 'Please upload a valid video file.' });
+        }
+
         const bucketName = process.env.SUPABASE_BUCKET;
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const fileName = uniqueSuffix + path.extname(file.originalname);
@@ -79,10 +83,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(500).json({ success: false, message: 'Storage Error' });
         }
 
-        // Get public URL with forced download and original filename
+        // Store an inline URL. The download route adds the download flag when needed.
         const { data: publicUrlData } = supabase.storage
             .from(bucketName)
-            .getPublicUrl(fileName, { download: file.originalname });
+            .getPublicUrl(fileName);
 
         const fileUrl = publicUrlData.publicUrl;
 

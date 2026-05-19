@@ -50,6 +50,12 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
+// Serve the frontend locally when this repo is running as a single app.
+const frontendPath = path.join(__dirname, '..', 'frontend');
+if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
+}
+
 // Root route
 app.get("/", (req, res) => {
     res.send("Backend is running 🚀");
@@ -59,5 +65,4 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
 

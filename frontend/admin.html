@@ -164,12 +164,19 @@
                             <label for="matCategory">Category</label>
                             <select id="matCategory" required class="input-box" style="padding-left:14px; -webkit-appearance: none; appearance: none;">
                                 <option value="Notes">Notes (PDF, Docs)</option>
-                                <option value="Video">Video Lectures (Link)</option>
+                                <option value="Video">Video Lectures (Link/File)</option>
                                 <option value="Quiz">Quizzes / Assignments</option>
                             </select>
                         </div>
+                        <div class="field" id="videoSourceGroup" style="display: none;">
+                            <label for="matVideoSource">Video Source</label>
+                            <select id="matVideoSource" class="input-box" style="padding-left:14px; -webkit-appearance: none; appearance: none;">
+                                <option value="link">Online Link</option>
+                                <option value="file">Offline Video File</option>
+                            </select>
+                        </div>
                         <div class="field" id="fileFieldGroup">
-                            <label for="matFile">Select File</label>
+                            <label for="matFile" id="matFileLabel">Select File</label>
                             <input type="file" id="matFile" required class="input-box" style="padding-left:14px; padding-top:10px;">
                         </div>
                         <div class="field" id="linkFieldGroup" style="display: none;">

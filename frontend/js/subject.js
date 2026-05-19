@@ -149,16 +149,46 @@ function extractYouTubeID(url) {
     return null;
 }
 
+function isHttpPage() {
+    return window.location.protocol === 'http:' || window.location.protocol === 'https:';
+}
+
+function isDirectVideoFile(material) {
+    const type = (material.type || '').toUpperCase();
+    const url = material.fileUrl || '';
+    return ['MP4', 'WEBM', 'OGG', 'MOV', 'M4V', 'MKV'].includes(type) ||
+        /\.(mp4|webm|ogg|mov|m4v|mkv)(\?|#|$)/i.test(url);
+}
+
+function buildYouTubeEmbedUrl(videoId) {
+    const params = new URLSearchParams({
+        playsinline: '1',
+        rel: '0',
+        modestbranding: '1'
+    });
+
+    if (isHttpPage() && window.location.origin && window.location.origin !== 'null') {
+        params.set('origin', window.location.origin);
+    }
+
+    return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+}
+
 // Copy video URL to clipboard
 function copyVideoUrl() {
     if (currentVideoUrl) {
+        const openVideo = () => window.open(currentVideoUrl, '_blank');
+
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+            openVideo();
+            return;
+        }
+
         navigator.clipboard.writeText(currentVideoUrl).then(() => {
-            showToast('Link copied! Opening YouTube...', 'success');
-            setTimeout(() => {
-                window.open(currentVideoUrl, '_blank');
-            }, 500);
+            showToast('Link copied! Opening video...', 'success');
+            setTimeout(openVideo, 500);
         }).catch(() => {
-            window.open(currentVideoUrl, '_blank');
+            openVideo();
         });
     }
 }
@@ -167,11 +197,12 @@ function copyVideoUrl() {
 function openVideoModal(m) {
     const modal = document.getElementById('videoModal');
     const iframe = document.getElementById('videoIframe');
+    const player = document.getElementById('videoPlayer');
     const title = document.getElementById('videoModalTitle');
     const errorDiv = document.getElementById('videoError');
     const errorMsg = document.getElementById('videoErrorMsg');
     
-    if (!iframe || !title || !modal) return;
+    if (!iframe || !player || !title || !modal) return;
     
     // Store current video info
     currentVideoUrl = m.fileUrl;
@@ -179,6 +210,13 @@ function openVideoModal(m) {
     
     title.textContent = m.title;
     
+    iframe.style.display = 'none';
+    iframe.src = '';
+    player.style.display = 'none';
+    player.pause();
+    player.removeAttribute('src');
+    player.load();
+
     // Hide error initially
     if (errorDiv) errorDiv.style.display = 'none';
     
@@ -191,14 +229,22 @@ function openVideoModal(m) {
     });
     
     if (videoId) {
-        // Keep the mobile player inline and avoid reloading the iframe after it starts.
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`;
-        iframe.src = embedUrl;
+        if (isHttpPage()) {
+            iframe.src = buildYouTubeEmbedUrl(videoId);
+            iframe.style.display = 'block';
+        } else if (errorDiv && errorMsg) {
+            errorMsg.textContent = 'YouTube videos must be opened from the browser when this page is loaded offline.';
+            errorDiv.style.display = 'flex';
+        }
+    } else if (isDirectVideoFile(m)) {
+        player.src = m.fileUrl;
+        player.style.display = 'block';
+        player.load();
     } else {
         // No valid YouTube ID found
         console.warn('Could not extract YouTube ID from:', m.fileUrl);
         if (errorDiv && errorMsg) {
-            errorMsg.textContent = 'Invalid video link format';
+            errorMsg.textContent = 'This video link cannot be embedded. Open it directly instead.';
             errorDiv.style.display = 'flex';
         }
     }
@@ -210,14 +256,25 @@ function openVideoModal(m) {
 function closeVideoModal() { 
     const modal = document.getElementById('videoModal');
     const iframe = document.getElementById('videoIframe');
+    const player = document.getElementById('videoPlayer');
+    const errorDiv = document.getElementById('videoError');
     
     if (modal) modal.style.display = 'none';
     
     // Clear iframe to stop video
     if (iframe) {
         iframe.src = '';
+        iframe.style.display = 'none';
     }
 
+    if (player) {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+        player.style.display = 'none';
+    }
+
+    if (errorDiv) errorDiv.style.display = 'none';
     document.body.classList.remove('video-open');
 }
 

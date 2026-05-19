@@ -93,8 +93,14 @@
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                     allowfullscreen
                     loading="lazy"
+                    referrerpolicy="strict-origin-when-cross-origin"
                     title="Video Player">
                 </iframe>
+                <video id="videoPlayer" controls playsinline preload="metadata" style="display:none;"></video>
+                <div id="videoError" class="video-error" style="display:none;">
+                    <p id="videoErrorMsg">This video cannot be embedded here.</p>
+                    <button type="button" class="btn btn-primary" onclick="copyVideoUrl()">Open Video</button>
+                </div>
             </div>
             <div class="video-info">
                 <h3 id="videoModalTitle">Video Title</h3>
