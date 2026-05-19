@@ -52,9 +52,50 @@ async function refreshMaterials() {
         showSkeletons();
         allMaterials = await DataStore.getMaterials();
         renderMaterials();
+        updateAccountSidebar();
     } catch (err) {
         showToast('Server connection failed', 'error');
     }
+}
+
+function updateAccountSidebar() {
+    if (!user) return;
+
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || '-';
+    };
+
+    const savedCount = DataStore.getFavorites().length;
+    const role = user.role === 'admin' ? 'Admin' : 'Student';
+
+    setText('sidebarAvatar', user.name ? user.name[0].toUpperCase() : 'S');
+    setText('sidebarName', user.name);
+    setText('sidebarRole', role);
+    setText('sidebarRollNo', user.rollNo);
+    setText('sidebarEnrollNo', user.enrollNo);
+    setText('sidebarBranch', user.branch);
+    setText('sidebarSemester', user.semester ? `Semester ${user.semester}` : '-');
+    setText('sidebarStatus', user.approved === false ? 'Pending' : 'Approved');
+    setText('sidebarMaterialCount', String(allMaterials.length || 0));
+    setText('sidebarSavedCount', String(savedCount || 0));
+}
+
+function openAccountSidebar() {
+    updateAccountSidebar();
+    const overlay = document.getElementById('accountSidebarOverlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('account-sidebar-open');
+}
+
+function closeAccountSidebar() {
+    const overlay = document.getElementById('accountSidebarOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('account-sidebar-open');
 }
 
 function showSkeletons() {
@@ -183,6 +224,7 @@ function toggleFav(e, id) {
     const active = DataStore.toggleFavorite(id);
     showToast(active ? 'Added to Saved' : 'Removed from Saved', active ? 'success' : 'info');
     renderMaterials();
+    updateAccountSidebar();
 }
 
 function switchView(view, el) {
@@ -217,6 +259,18 @@ function closeMatModal() { document.getElementById('matModal').style.display = '
 
 document.getElementById('searchInput').addEventListener('input', renderMaterials);
 document.getElementById('logoutBtn').addEventListener('click', () => { DataStore.logout(); window.location.href = 'index.html'; });
+
+document.getElementById('accountSidebarBtn')?.addEventListener('click', openAccountSidebar);
+document.getElementById('closeAccountSidebar')?.addEventListener('click', closeAccountSidebar);
+document.getElementById('accountSidebarOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'accountSidebarOverlay') closeAccountSidebar();
+});
+document.getElementById('upgradePlanBtn')?.addEventListener('click', () => {
+    showToast('Upgrade request feature is coming soon', 'info');
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAccountSidebar();
+});
 
 const mobLogout = document.getElementById('mobileLogout');
 if (mobLogout) mobLogout.addEventListener('click', () => { DataStore.logout(); window.location.href = 'index.html'; });
@@ -331,9 +385,115 @@ document.getElementById('matModal').addEventListener('click', (e) => { if (e.tar
     function addMessage(text, sender) {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender}`;
-        msgDiv.textContent = text;
+
+        if (sender === 'ai') {
+            msgDiv.innerHTML = formatAssistantMessage(text);
+        } else {
+            msgDiv.textContent = text;
+        }
+
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function formatAssistantMessage(text) {
+        const lines = esc(text).replace(/\r\n/g, '\n').split('\n');
+        const html = [];
+        let listType = null;
+        let inCodeBlock = false;
+        let codeLines = [];
+        let listIndex = 0;
+
+        const closeList = () => {
+            if (!listType) return;
+            html.push(`</${listType}>`);
+            listType = null;
+            listIndex = 0;
+        };
+
+        const closeCodeBlock = () => {
+            if (!inCodeBlock) return;
+            html.push(`<pre><code>${codeLines.join('\n')}</code></pre>`);
+            codeLines = [];
+            inCodeBlock = false;
+        };
+
+        const openList = (type) => {
+            if (listType === type) return;
+            closeList();
+            html.push(`<${type}>`);
+            listType = type;
+            listIndex = 0;
+        };
+
+        lines.forEach(rawLine => {
+            const line = rawLine.trim();
+
+            if (line.startsWith('```')) {
+                closeList();
+                if (inCodeBlock) {
+                    closeCodeBlock();
+                } else {
+                    inCodeBlock = true;
+                    codeLines = [];
+                }
+                return;
+            }
+
+            if (inCodeBlock) {
+                codeLines.push(rawLine);
+                return;
+            }
+
+            if (!line) {
+                closeList();
+                return;
+            }
+
+            const headingMatch =
+                line.match(/^#{1,6}\s+(.+)$/) ||
+                line.match(/^\*\*(.+?)\*\*:?\s*$/) ||
+                line.match(/^([A-Z][A-Za-z0-9 /&+-]{2,42}):$/);
+            if (headingMatch) {
+                closeList();
+                html.push(`<div class="chat-answer-heading">${formatInline(headingMatch[1])}</div>`);
+                return;
+            }
+
+            const bulletMatch = line.match(/^(?:[-*•]|–|—)\s+(.+)$/);
+            if (bulletMatch) {
+                openList('ul');
+                html.push(`<li><span class="chat-list-icon" aria-hidden="true"><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4"/></svg></span><span class="chat-list-text">${formatInline(bulletMatch[1])}</span></li>`);
+                return;
+            }
+
+            const numberedMatch = line.match(/^\d+[.)]\s+(.+)$/);
+            if (numberedMatch) {
+                openList('ol');
+                listIndex += 1;
+                html.push(`<li><span class="chat-list-number" aria-hidden="true">${listIndex}</span><span class="chat-list-text">${formatInline(numberedMatch[1])}</span></li>`);
+                return;
+            }
+
+            closeList();
+            html.push(`<p>${formatInline(line)}</p>`);
+        });
+
+        closeList();
+        closeCodeBlock();
+        return html.join('');
+    }
+
+    function formatInline(text) {
+        const codeParts = [];
+        const withPlaceholders = text.replace(/`([^`]+)`/g, (_, code) => {
+            codeParts.push(`<code>${code}</code>`);
+            return `@@CODE_${codeParts.length - 1}@@`;
+        });
+
+        return withPlaceholders
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/@@CODE_(\d+)@@/g, (_, index) => codeParts[Number(index)] || '');
     }
 
     function trimChatHistory() {

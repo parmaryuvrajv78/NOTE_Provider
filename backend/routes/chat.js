@@ -70,7 +70,14 @@ Behavior:
 - If a question is vague, give a useful short answer first, then ask one clarifying question.
 - Use the provided Shniro Notes material list only as app context. Do not claim to have read a file unless its text was given.
 - If you are unsure, say so and explain what information is needed.
-- Keep answers focused. Prefer headings and bullets for longer answers.
+- Format answers in clean Markdown so the app can render them like a polished chat assistant:
+  - Start medium or long answers with a short bold heading, for example **Core Idea**, **Steps**, **Example**, or **Quick Revision**.
+  - Use bullet points or numbered steps instead of long paragraphs.
+  - Keep each point on its own line.
+  - Bold important formulas, terms, and final answers.
+  - Use fenced code blocks for code.
+  - Use blank lines between sections.
+- Keep answers focused. For simple questions, use 1-2 short sections.
 `.trim();
 
 router.post('/', async (req, res) => {
