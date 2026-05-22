@@ -51,9 +51,11 @@ const DataStore = (() => {
         return await res.json();
     }
 
-    async function login(rollNo, enrollNo, adminId = '') {
-        const payload = { rollNo, enrollNo };
-        if (adminId) payload.adminId = adminId;
+    async function login(details, enrollNo, adminId = '') {
+        const payload = typeof details === 'object' && details !== null
+            ? { ...details }
+            : { rollNo: details, enrollNo };
+        if (adminId && !payload.adminId) payload.adminId = adminId;
 
         const res = await fetch(`${API_BASE}/login`, {
             method: 'POST',
@@ -264,43 +266,6 @@ const DataStore = (() => {
         return await res.json();
     }
 
-    async function googleSignIn(details = {}) {
-        return new Promise((resolve, reject) => {
-            const params = typeof details === 'string' ? { adminId: details } : details;
-            const url = appendQuery(`${API_BASE}/auth/google`, params || {});
-            const popup = window.open(url, 'googleAuth', 'width=600,height=600');
-            if (!popup) return reject({ success: false, message: 'Popup blocked' });
-
-            const popupWatcher = setInterval(() => {
-                if (popup.closed) {
-                    clearInterval(popupWatcher);
-                    window.removeEventListener('message', handleMessage);
-                    resolve({ success: false, message: 'Google sign-in cancelled' });
-                }
-            }, 500);
-
-            function handleMessage(e) {
-                try {
-                    const data = e.data;
-                    if (data && typeof data.success !== 'undefined') {
-                        clearInterval(popupWatcher);
-                        window.removeEventListener('message', handleMessage);
-                        if (data.success) {
-                            setCurrentUser(data.user);
-                            resolve(data);
-                        } else {
-                            resolve(data);
-                        }
-                    }
-                } catch (err) {
-                    // ignore
-                }
-            }
-
-            window.addEventListener('message', handleMessage, false);
-        });
-    }
-
     // --- Ratings ---
     async function submitRating(userId, rating, review) {
         const res = await fetch(`${API_BASE}/ratings/submit`, {
@@ -331,7 +296,6 @@ const DataStore = (() => {
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,
-        googleSignIn,
         setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin, isSuperAdmin,
     };
 })();

@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     name: String,
-    googleId: { type: String, index: true, sparse: true },
-    email: { type: String, lowercase: true, index: true, sparse: true },
     phone: { type: String, index: true },
     instituteName: { type: String, index: true },
     adminCode: { type: String, uppercase: true, index: true },

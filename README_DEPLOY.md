@@ -27,7 +27,7 @@ window.API_BASE = IS_LOCAL
     : 'https://your-backend-url.onrender.com/api';
 ```
 
-For storage and Google login environment setup, see `SUPABASE_SETUP.md`.
+For storage environment setup, see `SUPABASE_SETUP.md`.
 
 ---
 **Tech Stack:**

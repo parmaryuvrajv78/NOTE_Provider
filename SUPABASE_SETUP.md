@@ -21,34 +21,11 @@ SUPABASE_BUCKET=materials
 
 Use the service role key only in `backend/.env` or Render environment variables. Never put it in frontend JavaScript.
 
-## 3. Google Login Environment Variables
-
-For local development:
-
-```env
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-SESSION_SECRET=replace-with-a-long-random-string
-BASE_URL=http://localhost:3000
-```
-
-In Google Cloud OAuth, add this redirect URI:
-
-```text
-http://localhost:3000/api/auth/google/callback
-```
-
-For production, set `BASE_URL` to your backend URL and add:
-
-```text
-https://your-backend-url.onrender.com/api/auth/google/callback
-```
-
-## 4. Render Variables
+## 3. Render Variables
 
 On Render, add the same backend variables from `backend/.env`. After changing them, restart the web service.
 
-## 5. Quick Check
+## 4. Quick Check
 
 Start the backend and open:
 

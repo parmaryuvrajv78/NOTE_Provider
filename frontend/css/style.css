@@ -2380,18 +2380,6 @@ body.dark .auth-card {
     border-radius: 14px;
 }
 
-.btn-google {
-    background: rgba(255, 255, 255, 0.78);
-    color: var(--text);
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-}
-
-body.dark .btn-google {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
 .role-choice {
     display: grid;
     grid-template-columns: 1fr 1fr;
