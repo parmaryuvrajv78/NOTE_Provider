@@ -11,6 +11,15 @@
     if (localStorage.getItem('sn_theme') === 'dark') document.body.classList.add('dark');
 })();
 
+const currentAdmin = DataStore.getCurrentUser();
+if (currentAdmin) {
+    const navUser = document.querySelector('.nav-user');
+    const avatar = navUser && navUser.querySelector('.avatar-circle');
+    const label = navUser && navUser.querySelector('span');
+    if (avatar) avatar.textContent = currentAdmin.name ? currentAdmin.name[0].toUpperCase() : 'A';
+    if (label) label.textContent = currentAdmin.name || 'Admin';
+}
+
 // --- Toast ---
 function showToast(msg, type = 'info') {
     const box = document.getElementById('toastBox');
@@ -110,9 +119,12 @@ function renderStudents(students) {
         row.innerHTML = `
             <div class="user-info">
                 <div class="avatar-circle">${u.name[0].toUpperCase()}</div>
-                <div><div class="user-name">${esc(u.name)}</div><div class="user-meta">${esc(u.rollNo)}</div></div>
+                <div><div class="user-name">${esc(u.name)}</div><div class="user-meta">${esc(u.rollNo)} • Plan: ${esc(u.plan || 'free')}</div></div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="removeUser('${u.id}')" style="color:var(--error)">Remove</button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                ${u.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeUser('${u.id}')">Upgrade</button>`}
+                <button class="btn btn-ghost btn-sm" onclick="removeUser('${u.id}')" style="color:var(--error)">Remove</button>
+            </div>
         `;
         list.appendChild(row);
     });
@@ -128,11 +140,12 @@ function renderMaterials(materials) {
             <div class="user-info">
                 <div class="avatar-circle" style="background:var(--blue-light); color:var(--blue)">📄</div>
                 <div><div class="user-name">${esc(m.title)}</div><div class="user-meta">${esc(m.subject)} • ${esc(m.size)}</div></div>
+            </div>
             <div class="user-actions">
-                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/view/${m.id}\`" title="View" style="color:var(--blue); background:var(--blue-light);">
+                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/view/${m.id}?userId=${DataStore.getCurrentUser() && DataStore.getCurrentUser().id}\`" title="View" style="color:var(--blue); background:var(--blue-light);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/download/${m.id}\`" title="Download" style="color:var(--green); background:rgba(46,204,113,0.1);">
+                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/download/${m.id}?userId=${DataStore.getCurrentUser() && DataStore.getCurrentUser().id}\`" title="Download" style="color:var(--green); background:rgba(46,204,113,0.1);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
                 <button class="btn-icon-tile" onclick="deleteMat('${m.id}')" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
@@ -159,6 +172,17 @@ async function removeUser(id) {
     if (confirm('Delete student?')) {
         const res = await DataStore.removeUser(id);
         if (res.success) { showToast('Removed', 'success'); refreshData(); }
+    }
+}
+
+async function upgradeUser(id) {
+    if (!confirm('Upgrade this user to Pro plan?')) return;
+    const res = await DataStore.upgradeUser(id);
+    if (res && res.success) {
+        showToast('User upgraded to Pro', 'success');
+        refreshData();
+    } else {
+        showToast(res && res.message ? res.message : 'Upgrade failed', 'error');
     }
 }
 

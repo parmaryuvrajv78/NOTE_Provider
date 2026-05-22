@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Groq = require('groq-sdk');
+const User = require('../models/user');
 
 const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const MAX_HISTORY_MESSAGES = 12;
@@ -82,12 +83,59 @@ Behavior:
 
 router.post('/', async (req, res) => {
     const { message, history, context } = req.body || {};
+    const { userId } = req.body || {};
     const userMessage = cleanText(message);
 
     console.log('AI Chat Request received');
 
     if (!userMessage) {
         return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    // Require logged-in user for AI usage tracking and limits
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'User authentication required for AI assistant.' });
+    }
+
+    // Load user and enforce daily limits
+    let user;
+    try {
+        user = await User.findById(userId);
+    } catch (e) {
+        user = null;
+    }
+
+    if (!user || !user.approved) {
+        return res.status(403).json({ success: false, error: 'User not authorized or not found.' });
+    }
+
+    // Reset daily counts if last reset wasn't today (UTC)
+    const now = new Date();
+    const last = user.aiLastReset || new Date(0);
+    const sameUTCDate = last.getUTCFullYear() === now.getUTCFullYear() && last.getUTCMonth() === now.getUTCMonth() && last.getUTCDate() === now.getUTCDate();
+    if (!sameUTCDate) {
+        user.aiQuestionsUsed = 0;
+        user.aiLastReset = now;
+    }
+
+    const FREE_LIMIT = Number(process.env.FREE_AI_LIMIT || 5);
+    const PRO_LIMIT = Number(process.env.PRO_AI_LIMIT || 100);
+    const userLimit = (user.plan === 'pro') ? PRO_LIMIT : FREE_LIMIT;
+
+    if ((user.aiQuestionsUsed || 0) >= userLimit) {
+        return res.status(429).json({
+            success: false,
+            error: `Daily AI question limit reached (${userLimit}). Upgrade to pro to increase quota.`
+        });
+    }
+
+    // Increment usage now (best-effort) and persist
+    try {
+        user.aiQuestionsUsed = (user.aiQuestionsUsed || 0) + 1;
+        user.aiLastReset = user.aiLastReset || now;
+        await user.save();
+    } catch (e) {
+        console.warn('Could not update AI usage for user', userId, e.message || e);
     }
 
     if (!isGroqConfigured()) {
@@ -125,7 +173,9 @@ router.post('/', async (req, res) => {
             return res.status(502).json({ success: false, error: 'AI returned an empty answer. Please try again.' });
         }
 
-        res.json({ success: true, response: answer, model: DEFAULT_MODEL });
+        const aiUsed = user.aiQuestionsUsed || 0;
+        const aiRemaining = Math.max(0, userLimit - aiUsed);
+        res.json({ success: true, response: answer, model: DEFAULT_MODEL, aiQuestionsUsed: aiUsed, aiRemaining });
     } catch (err) {
         console.error('Groq AI Error Detail:', err.message);
         const status = err.status || err.response?.status || 500;

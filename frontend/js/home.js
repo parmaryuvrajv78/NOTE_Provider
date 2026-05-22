@@ -37,6 +37,57 @@ function showToast(msg, type = 'info') {
     setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
+// Show upgrade modal (used when download or AI quota is blocked)
+function showUpgradeModal(title, message) {
+    let overlay = document.getElementById('upgradeModalOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'upgradeModalOverlay';
+        overlay.className = 'popup-overlay';
+        overlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:11000; align-items:center; justify-content:center;';
+
+        const card = document.createElement('div');
+        card.className = 'upgrade-modal-card';
+        card.style.cssText = 'background:var(--bg); color:var(--text); padding:20px; width:clamp(320px, 90%, 520px); border-radius:12px; box-shadow:0 8px 28px rgba(0,0,0,0.3);';
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:18px;">${title || 'Upgrade Required'}</h3>
+                <button id="upgradeModalCloseBtn" style="background:none;border:none;font-size:18px;cursor:pointer;">✕</button>
+            </div>
+            <p style="margin:0 0 16px 0; line-height:1.4">${message || ''}</p>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+                <button id="upgradeModalClose" class="btn btn-ghost">Close</button>
+                <button id="upgradeModalAction" class="btn btn-primary">Request Upgrade</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#upgradeModalCloseBtn').addEventListener('click', () => overlay.style.display = 'none');
+        overlay.querySelector('#upgradeModalClose').addEventListener('click', () => overlay.style.display = 'none');
+        overlay.querySelector('#upgradeModalAction').addEventListener('click', () => {
+            const accBtn = document.getElementById('accountSidebarBtn');
+            if (accBtn) {
+                accBtn.click();
+                setTimeout(() => { const up = document.getElementById('upgradePlanBtn'); if (up) up.click(); }, 350);
+            } else {
+                window.location.href = 'home.html';
+            }
+            overlay.style.display = 'none';
+        });
+    }
+
+    const card = overlay.querySelector('.upgrade-modal-card');
+    if (card) {
+        const h = card.querySelector('h3'); if (h) h.textContent = title || 'Upgrade Required';
+        const p = card.querySelector('p'); if (p) p.textContent = message || '';
+    }
+
+    overlay.style.display = 'flex';
+}
+
 function esc(str) {
     if (!str) return '';
     const d = document.createElement('div');
@@ -254,11 +305,22 @@ function openMatModal(id) {
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
-    document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}`;
-    document.getElementById('modalDownload').onclick = () => {
-        window.location.href = `${API_BASE}/materials/download/${m.id || m._id}`;
-        showToast('Download started!', 'success');
-    };
+    const currentUser = DataStore.getCurrentUser();
+    document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}?userId=${currentUser && currentUser.id}`;
+    const downloadBtn = document.getElementById('modalDownload');
+    const canDownload = currentUser && (currentUser.role === 'admin' || currentUser.plan === 'pro');
+    if (canDownload) {
+        downloadBtn.disabled = false;
+        downloadBtn.onclick = () => {
+            window.location.href = `${API_BASE}/materials/download/${m.id || m._id}?userId=${currentUser.id}`;
+            showToast('Download started!', 'success');
+        };
+    } else {
+        // Allow click to open upgrade prompt (do not perform download)
+        downloadBtn.disabled = false;
+        downloadBtn.style.opacity = '0.95';
+        downloadBtn.onclick = () => showUpgradeModal('Upgrade Required', 'Downloads are available only for upgraded users. Upgrade to Pro to enable downloads and increased AI quota.');
+    }
     document.getElementById('matModal').style.display = 'flex';
 }
 
@@ -411,7 +473,8 @@ document.getElementById('submitRatingBtn')?.addEventListener('click', async () =
                 body: JSON.stringify({
                     message: text,
                     history: chatHistory.slice(0, -1).slice(-10),
-                    context: buildAssistantContext(text)
+                    context: buildAssistantContext(text),
+                    userId: user?.id
                 })
             });
 
@@ -421,8 +484,22 @@ document.getElementById('submitRatingBtn')?.addEventListener('click', async () =
             addMessage(data.response, 'ai');
             chatHistory.push({ role: 'assistant', content: data.response });
             trimChatHistory();
+            // Update stored user AI usage info if provided
+            if (data.aiQuestionsUsed !== undefined) {
+                const cur = DataStore.getCurrentUser();
+                if (cur) {
+                    cur.aiQuestionsUsed = data.aiQuestionsUsed;
+                    cur.plan = cur.plan || 'free';
+                    DataStore.setCurrentUser(cur);
+                }
+            }
         } else {
-            addMessage(data.error || "Sorry, I'm having trouble answering right now. Please try again.", 'ai');
+            // If response indicates quota exceeded, show upgrade modal
+            if (response.status === 429 || (data && data.error && /limit|quota|upgrade/i.test(data.error))) {
+                showUpgradeModal('AI Limit Reached', data.error || 'Your daily AI question limit has been reached. Upgrade to Pro to increase your quota.');
+            } else {
+                addMessage(data.error || "Sorry, I'm having trouble answering right now. Please try again.", 'ai');
+            }
         }
         } catch (error) {
             addMessage("I couldn't reach the assistant server. Please check your connection and make sure the backend is running.", 'ai');

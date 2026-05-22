@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { supabase } = require('../middlewares/upload');
+const { supabase, isSupabaseConfigured } = require('../middlewares/upload');
 
 router.get('/status', async (req, res) => {
     const status = {
@@ -18,9 +18,11 @@ router.get('/status', async (req, res) => {
         }
 
         // Check Supabase
-        const { data, error } = await supabase.storage.listBuckets();
-        if (!error) {
-            status.supabase = 'online';
+        if (isSupabaseConfigured) {
+            const { error } = await supabase.storage.listBuckets();
+            if (!error) {
+                status.supabase = 'online';
+            }
         }
 
         res.json({ success: true, status });

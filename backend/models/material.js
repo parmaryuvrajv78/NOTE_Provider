@@ -15,6 +15,7 @@ const materialSchema = new mongoose.Schema({
     size: String,
     fileUrl: String,
     fileName: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, default: null },
     // Quiz-specific fields
     questions: [questionSchema],  // Array of questions for quizzes
     createdAt: { type: Date, default: Date.now }

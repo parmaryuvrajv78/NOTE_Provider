@@ -56,6 +56,45 @@ function showToast(msg, type = 'info') {
     }, 3500);
 }
 
+async function loadAdminOptions() {
+    const loginSelect = document.getElementById('loginAdminId');
+    const registerSelect = document.getElementById('regAdminId');
+    if (!loginSelect && !registerSelect) return;
+
+    try {
+        const res = await DataStore.getAdmins();
+        const admins = res && res.success && Array.isArray(res.admins) ? res.admins : [];
+
+        if (loginSelect) {
+            loginSelect.innerHTML = '<option value="">Auto detect admin</option>';
+            admins.forEach(admin => {
+                const option = document.createElement('option');
+                option.value = admin.id;
+                option.textContent = admin.name;
+                loginSelect.appendChild(option);
+            });
+        }
+
+        if (registerSelect) {
+            registerSelect.innerHTML = '<option value="" disabled selected>Select admin</option>';
+            admins.forEach(admin => {
+                const option = document.createElement('option');
+                option.value = admin.id;
+                option.textContent = admin.name;
+                registerSelect.appendChild(option);
+            });
+            registerSelect.disabled = admins.length === 0;
+        }
+    } catch (err) {
+        if (registerSelect) {
+            registerSelect.innerHTML = '<option value="" disabled selected>Admins unavailable</option>';
+            registerSelect.disabled = true;
+        }
+    }
+}
+
+loadAdminOptions();
+
 // --- Popup ---
 function showPopup(title, msg) {
     document.getElementById('popupTitle').textContent = title;
@@ -72,6 +111,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const rollNo = document.getElementById('loginRollNo').value.trim();
     const enrollNo = document.getElementById('loginEnrollNo').value.trim();
+    const adminId = document.getElementById('loginAdminId')?.value || '';
 
     if (!rollNo || !enrollNo) { showToast('Please fill both fields', 'error'); return; }
 
@@ -80,7 +120,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     btn.disabled = true;
 
     try {
-        const result = await DataStore.login(rollNo, enrollNo);
+        const result = await DataStore.login(rollNo, enrollNo, adminId);
         if (result.success) {
             showToast('Welcome back!', 'success');
             setTimeout(() => {
@@ -97,6 +137,36 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
 });
 
+// --- Google Sign-in ---
+const googleBtn = document.getElementById('googleSignBtn');
+if (googleBtn) {
+    googleBtn.addEventListener('click', async () => {
+        const adminId = document.getElementById('loginAdminId')?.value || '';
+        if (!adminId) {
+            showToast('Select your admin before Google sign-in', 'warning');
+            document.getElementById('loginAdminId')?.focus();
+            return;
+        }
+
+        googleBtn.disabled = true;
+        try {
+            const result = await DataStore.googleSignIn(adminId);
+            if (result && result.success) {
+                showToast('Welcome back!', 'success');
+                setTimeout(() => {
+                    window.location.href = result.user.role === 'admin' ? 'admin.html' : 'home.html';
+                }, 600);
+            } else {
+                showToast(result.message || 'Google sign-in failed', 'error');
+            }
+        } catch (err) {
+            showToast(err.message || 'Google sign-in cancelled or failed', 'error');
+        } finally {
+            googleBtn.disabled = false;
+        }
+    });
+}
+
 // --- Register ---
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -105,8 +175,9 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const enrollNo = document.getElementById('regEnrollNo').value.trim();
     const branch = document.getElementById('regBranch').value;
     const semester = document.getElementById('regSemester').value;
+    const adminId = document.getElementById('regAdminId')?.value || '';
 
-    if (!name || !rollNo || !enrollNo || !branch || !semester) {
+    if (!name || !rollNo || !enrollNo || !branch || !semester || !adminId) {
         showToast('Fill all fields', 'error'); return;
     }
 
@@ -115,7 +186,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     btn.disabled = true;
 
     try {
-        const result = await DataStore.register({ name, rollNo, enrollNo, branch, semester });
+        const result = await DataStore.register({ name, rollNo, enrollNo, branch, semester, adminId });
         if (result.success) {
             showPopup('Request Sent!', result.message);
             document.getElementById('registerForm').reset();

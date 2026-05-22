@@ -22,11 +22,38 @@ const DataStore = (() => {
         // No init needed for backend, server handles it
     }
 
-    async function login(rollNo, enrollNo) {
+    function getCurrentUserId() {
+        const user = getCurrentUser();
+        return user && user.id ? user.id : '';
+    }
+
+    function getCurrentAdminId() {
+        const user = getCurrentUser();
+        return user && user.role === 'admin' && user.id ? user.id : '';
+    }
+
+    function appendQuery(url, params) {
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') query.set(key, value);
+        });
+        const suffix = query.toString();
+        return suffix ? `${url}?${suffix}` : url;
+    }
+
+    async function getAdmins() {
+        const res = await fetch(`${API_BASE}/admins`);
+        return await res.json();
+    }
+
+    async function login(rollNo, enrollNo, adminId = '') {
+        const payload = { rollNo, enrollNo };
+        if (adminId) payload.adminId = adminId;
+
         const res = await fetch(`${API_BASE}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rollNo, enrollNo })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.success) setCurrentUser(data.user);
@@ -44,7 +71,7 @@ const DataStore = (() => {
 
     // --- Admin ---
     async function getAdminData() {
-        const res = await fetch(`${API_BASE}/admin/data`);
+        const res = await fetch(appendQuery(`${API_BASE}/admin/data`, { adminId: getCurrentAdminId() }));
         return await res.json();
     }
 
@@ -52,7 +79,7 @@ const DataStore = (() => {
         const res = await fetch(`${API_BASE}/admin/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, adminId: getCurrentAdminId() })
         });
         return await res.json();
     }
@@ -61,23 +88,35 @@ const DataStore = (() => {
         const res = await fetch(`${API_BASE}/admin/reject`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id })
+            body: JSON.stringify({ id, adminId: getCurrentAdminId() })
         });
         return await res.json();
     }
 
     async function removeUser(id) {
-        const res = await fetch(`${API_BASE}/admin/user/${id}`, { method: 'DELETE' });
+        const res = await fetch(appendQuery(`${API_BASE}/admin/user/${id}`, { adminId: getCurrentAdminId() }), { method: 'DELETE' });
+        return await res.json();
+    }
+
+    async function upgradeUser(id) {
+        const res = await fetch(`${API_BASE}/admin/upgrade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, adminId: getCurrentAdminId() })
+        });
         return await res.json();
     }
 
     // --- Materials ---
     async function getMaterials() {
-        const res = await fetch(`${API_BASE}/materials`);
+        const res = await fetch(appendQuery(`${API_BASE}/materials`, { userId: getCurrentUserId() }));
         return await res.json();
     }
 
     async function uploadMaterial(formData) {
+        const adminId = getCurrentAdminId();
+        if (adminId && !formData.has('adminId')) formData.append('adminId', adminId);
+
         const res = await fetch(`${API_BASE}/materials/upload`, {
             method: 'POST',
             body: formData // Note: Don't set Content-Type header for FormData
@@ -86,7 +125,7 @@ const DataStore = (() => {
     }
 
     async function deleteMaterial(id) {
-        const res = await fetch(`${API_BASE}/materials/${id}`, { method: 'DELETE' });
+        const res = await fetch(appendQuery(`${API_BASE}/materials/${id}`, { adminId: getCurrentAdminId() }), { method: 'DELETE' });
         return await res.json();
     }
 
@@ -137,6 +176,42 @@ const DataStore = (() => {
         return await res.json();
     }
 
+    async function googleSignIn(adminId = '') {
+        return new Promise((resolve, reject) => {
+            const url = appendQuery(`${API_BASE}/auth/google`, { adminId });
+            const popup = window.open(url, 'googleAuth', 'width=600,height=600');
+            if (!popup) return reject({ success: false, message: 'Popup blocked' });
+
+            const popupWatcher = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(popupWatcher);
+                    window.removeEventListener('message', handleMessage);
+                    resolve({ success: false, message: 'Google sign-in cancelled' });
+                }
+            }, 500);
+
+            function handleMessage(e) {
+                try {
+                    const data = e.data;
+                    if (data && typeof data.success !== 'undefined') {
+                        clearInterval(popupWatcher);
+                        window.removeEventListener('message', handleMessage);
+                        if (data.success) {
+                            setCurrentUser(data.user);
+                            resolve(data);
+                        } else {
+                            resolve(data);
+                        }
+                    }
+                } catch (err) {
+                    // ignore
+                }
+            }
+
+            window.addEventListener('message', handleMessage, false);
+        });
+    }
+
     // --- Ratings ---
     async function submitRating(userId, rating, review) {
         const res = await fetch(`${API_BASE}/ratings/submit`, {
@@ -158,12 +233,14 @@ const DataStore = (() => {
     }
 
     return {
-        init, login, register,
+        init, getAdmins, login, register,
         getAdminData, approvePending, rejectPending, removeUser,
+        upgradeUser,
         getMaterials, uploadMaterial, deleteMaterial,
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,
+        googleSignIn,
         setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin,
     };
 })();
