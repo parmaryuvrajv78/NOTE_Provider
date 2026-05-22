@@ -29,7 +29,12 @@ const DataStore = (() => {
 
     function getCurrentAdminId() {
         const user = getCurrentUser();
-        return user && user.role === 'admin' && user.id ? user.id : '';
+        return user && ['admin', 'superadmin'].includes(user.role) && user.id ? user.id : '';
+    }
+
+    function getCurrentSuperAdminId() {
+        const user = getCurrentUser();
+        return user && user.role === 'superadmin' && user.id ? user.id : '';
     }
 
     function appendQuery(url, params) {
@@ -107,6 +112,72 @@ const DataStore = (() => {
         return await res.json();
     }
 
+    // --- Super Admin ---
+    async function getSuperAdminData() {
+        const res = await fetch(appendQuery(`${API_BASE}/superadmin/data`, { superAdminId: getCurrentSuperAdminId() }));
+        return await res.json();
+    }
+
+    async function approveAdmin(id) {
+        const res = await fetch(`${API_BASE}/superadmin/approve-admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, superAdminId: getCurrentSuperAdminId() })
+        });
+        return await res.json();
+    }
+
+    async function rejectAdmin(id) {
+        const res = await fetch(`${API_BASE}/superadmin/reject-admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, superAdminId: getCurrentSuperAdminId() })
+        });
+        return await res.json();
+    }
+
+    async function removeAdmin(id) {
+        const res = await fetch(appendQuery(`${API_BASE}/superadmin/admin/${id}`, { superAdminId: getCurrentSuperAdminId() }), { method: 'DELETE' });
+        return await res.json();
+    }
+
+    async function approveStudent(id) {
+        const res = await fetch(`${API_BASE}/superadmin/approve-student`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, superAdminId: getCurrentSuperAdminId() })
+        });
+        return await res.json();
+    }
+
+    async function rejectStudent(id) {
+        const res = await fetch(`${API_BASE}/superadmin/reject-student`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, superAdminId: getCurrentSuperAdminId() })
+        });
+        return await res.json();
+    }
+
+    async function removeStudent(id) {
+        const res = await fetch(appendQuery(`${API_BASE}/superadmin/student/${id}`, { superAdminId: getCurrentSuperAdminId() }), { method: 'DELETE' });
+        return await res.json();
+    }
+
+    async function upgradeStudent(id) {
+        const res = await fetch(`${API_BASE}/superadmin/upgrade-student`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, superAdminId: getCurrentSuperAdminId() })
+        });
+        return await res.json();
+    }
+
+    async function deleteAnyMaterial(id) {
+        const res = await fetch(appendQuery(`${API_BASE}/superadmin/material/${id}`, { superAdminId: getCurrentSuperAdminId() }), { method: 'DELETE' });
+        return await res.json();
+    }
+
     // --- Materials ---
     async function getMaterials() {
         const res = await fetch(appendQuery(`${API_BASE}/materials`, { userId: getCurrentUserId() }));
@@ -170,15 +241,17 @@ const DataStore = (() => {
 
     function isLoggedIn() { return getCurrentUser() !== null; }
     function isAdmin() { const u = getCurrentUser(); return u && u.role === 'admin'; }
+    function isSuperAdmin() { const u = getCurrentUser(); return u && u.role === 'superadmin'; }
 
     async function getSystemStatus() {
         const res = await fetch(`${API_BASE}/system/status`);
         return await res.json();
     }
 
-    async function googleSignIn(adminId = '') {
+    async function googleSignIn(details = {}) {
         return new Promise((resolve, reject) => {
-            const url = appendQuery(`${API_BASE}/auth/google`, { adminId });
+            const params = typeof details === 'string' ? { adminId: details } : details;
+            const url = appendQuery(`${API_BASE}/auth/google`, params || {});
             const popup = window.open(url, 'googleAuth', 'width=600,height=600');
             if (!popup) return reject({ success: false, message: 'Popup blocked' });
 
@@ -236,11 +309,13 @@ const DataStore = (() => {
         init, getAdmins, login, register,
         getAdminData, approvePending, rejectPending, removeUser,
         upgradeUser,
+        getSuperAdminData, approveAdmin, rejectAdmin, removeAdmin,
+        approveStudent, rejectStudent, removeStudent, upgradeStudent, deleteAnyMaterial,
         getMaterials, uploadMaterial, deleteMaterial,
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,
         googleSignIn,
-        setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin,
+        setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin, isSuperAdmin,
     };
 })();

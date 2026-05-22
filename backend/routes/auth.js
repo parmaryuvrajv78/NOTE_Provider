@@ -62,14 +62,14 @@ router.post('/login', async (req, res) => {
         let user = await User.findOne({
             rollNo: normalizedRollNo,
             enrollNo: normalizedEnrollNo,
-            role: 'admin'
+            role: { $in: ['admin', 'superadmin'] }
         });
 
         if (!user) {
             const studentQuery = {
                 rollNo: normalizedRollNo,
                 enrollNo: normalizedEnrollNo,
-                role: { $ne: 'admin' }
+                role: 'student'
             };
 
             if (adminId) {
@@ -110,9 +110,18 @@ router.get('/login', (req, res) => {
 // --- Google OAuth (optional)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     router.get('/auth/google', (req, res, next) => {
-        const adminId = String(req.query.adminId || '').trim();
+        const statePayload = {
+            mode: req.query.mode || 'login',
+            role: req.query.role || 'student',
+            adminId: req.query.adminId || '',
+            name: req.query.name || '',
+            rollNo: req.query.rollNo || '',
+            enrollNo: req.query.enrollNo || '',
+            branch: req.query.branch || '',
+            semester: req.query.semester || ''
+        };
         const options = { scope: ['profile', 'email'] };
-        if (adminId) options.state = adminId;
+        options.state = Buffer.from(JSON.stringify(statePayload)).toString('base64url');
         passport.authenticate('google', options)(req, res, next);
     });
 
@@ -165,8 +174,40 @@ router.post('/register', async (req, res) => {
     try {
         const userData = req.body;
         const adminId = userData.adminId;
+        const requestedRole = userData.role === 'admin' ? 'admin' : 'student';
         const normalizedRollNo = String(userData.rollNo || '').trim().toUpperCase();
         const normalizedEnrollNo = String(userData.enrollNo || '').trim().toUpperCase();
+
+        if (!normalizedRollNo || !normalizedEnrollNo || !userData.name) {
+            return res.json({ success: false, message: 'Name, roll number, and enrollment number are required.' });
+        }
+
+        if (requestedRole === 'admin') {
+            const exists = await User.findOne({
+                role: { $in: ['admin', 'superadmin'] },
+                $or: [
+                    { rollNo: normalizedRollNo },
+                    { enrollNo: normalizedEnrollNo }
+                ]
+            });
+
+            if (exists) {
+                return res.json({ success: false, message: 'Roll or Enrollment Number already exists.' });
+            }
+
+            const newAdmin = new User({
+                name: userData.name,
+                rollNo: normalizedRollNo,
+                enrollNo: normalizedEnrollNo,
+                branch: userData.branch,
+                semester: userData.semester,
+                role: 'admin',
+                approved: false
+            });
+
+            await newAdmin.save();
+            return res.json({ success: true, message: 'Admin registration request sent to super admin.' });
+        }
 
         if (!adminId) {
             return res.json({ success: false, message: 'Please select the admin/institute for your request.' });

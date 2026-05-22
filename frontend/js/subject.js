@@ -354,7 +354,7 @@ function openMatModal(id) {
     document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}?userId=${user && user.id}`;
     const downloadBtn = document.getElementById('modalDownload');
     const currentUser = DataStore.getCurrentUser();
-    const canDownload = currentUser && (currentUser.role === 'admin' || currentUser.plan === 'pro');
+    const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {

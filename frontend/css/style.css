@@ -2215,6 +2215,199 @@ body.video-open {
 img {
     transition: opacity 0.3s ease;
 }
+
+/* ===== PREMIUM AUTH REFRESH ===== */
+.auth-body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        linear-gradient(120deg, rgba(41, 121, 255, 0.22), rgba(46, 204, 113, 0.12) 45%, rgba(243, 156, 18, 0.16)),
+        var(--bg);
+}
+
+.auth-bg {
+    inset: 0;
+    height: auto;
+    border-radius: 0;
+    background:
+        linear-gradient(135deg, rgba(10, 24, 38, 0.92), rgba(21, 101, 192, 0.78)),
+        url("../icon.png") center/220px no-repeat;
+    opacity: 0.92;
+}
+
+body.dark .auth-bg {
+    background:
+        linear-gradient(135deg, rgba(8, 14, 22, 0.96), rgba(15, 40, 68, 0.9)),
+        url("../icon.png") center/220px no-repeat;
+}
+
+.auth-container {
+    align-items: center;
+    justify-content: center;
+    gap: 42px;
+    padding: 40px 20px;
+}
+
+.auth-showcase {
+    width: min(500px, 100%);
+    color: #fff;
+    text-shadow: 0 1px 20px rgba(0, 0, 0, 0.25);
+}
+
+.auth-mark {
+    width: 62px;
+    height: 62px;
+    border-radius: 18px;
+    padding: 8px;
+    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(18px);
+}
+
+.auth-mark img {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    display: block;
+}
+
+.auth-showcase h1 {
+    font-size: clamp(34px, 6vw, 58px);
+    line-height: 1.03;
+    letter-spacing: 0;
+    margin-bottom: 18px;
+}
+
+.auth-showcase p {
+    max-width: 460px;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+.auth-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.auth-highlights span {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 24px 70px rgba(8, 25, 42, 0.24);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+body.dark .auth-card {
+    background: rgba(26, 38, 54, 0.72);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-badge {
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue), var(--success));
+    letter-spacing: 0;
+}
+
+.input-box input,
+.input-box select {
+    border-radius: 14px;
+}
+
+.btn {
+    border-radius: 14px;
+}
+
+.btn-google {
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--text);
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+}
+
+body.dark .btn-google {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.role-choice {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 4px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+}
+
+.role-choice label {
+    cursor: pointer;
+}
+
+.role-choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.role-choice span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.role-choice input:checked + span {
+    background: var(--blue);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(41, 121, 255, 0.22);
+}
+
+@media (max-width: 900px) {
+    .auth-container {
+        display: block;
+        padding: 24px 16px;
+    }
+
+    .auth-showcase {
+        max-width: 420px;
+        margin: 0 auto 22px;
+    }
+
+    .auth-showcase h1 {
+        font-size: 30px;
+    }
+
+    .auth-showcase p {
+        font-size: 13px;
+    }
+
+    .auth-mark,
+    .auth-highlights {
+        display: none;
+    }
+
+    .auth-card {
+        margin: 0 auto;
+    }
+}
 /* ===== STACK GRID ===== */
 .stack-grid {
     display: grid;

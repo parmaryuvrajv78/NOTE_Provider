@@ -14,7 +14,7 @@ if (user) {
     document.getElementById('userName').textContent = user.name;
     document.getElementById('welcomeMsg').textContent = 'Hey ' + user.name.split(' ')[0] + '! 👋';
 
-    if (user.role === 'admin') {
+    if (['admin', 'superadmin'].includes(user.role)) {
         const navRight = document.querySelector('.nav-right');
         if (navRight) {
             const adminBtn = document.createElement('button');
@@ -22,7 +22,7 @@ if (user) {
             adminBtn.style.color = 'var(--blue)';
             adminBtn.style.marginRight = '8px';
             adminBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Dashboard';
-            adminBtn.onclick = () => window.location.href = 'admin.html';
+            adminBtn.onclick = () => window.location.href = user.role === 'superadmin' ? 'superadmin.html' : 'admin.html';
             navRight.insertBefore(adminBtn, document.getElementById('logoutBtn'));
         }
     }
@@ -118,7 +118,7 @@ function updateAccountSidebar() {
     };
 
     const savedCount = DataStore.getFavorites().length;
-    const role = user.role === 'admin' ? 'Admin' : 'Student';
+    const role = user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Student';
 
     setText('sidebarAvatar', user.name ? user.name[0].toUpperCase() : 'S');
     setText('sidebarName', user.name);
@@ -308,7 +308,7 @@ function openMatModal(id) {
     const currentUser = DataStore.getCurrentUser();
     document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}?userId=${currentUser && currentUser.id}`;
     const downloadBtn = document.getElementById('modalDownload');
-    const canDownload = currentUser && (currentUser.role === 'admin' || currentUser.plan === 'pro');
+    const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {

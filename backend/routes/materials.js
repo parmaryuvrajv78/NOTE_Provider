@@ -32,11 +32,12 @@ async function getUser(userId) {
 
 async function getAdmin(adminId) {
     const admin = await getUser(adminId);
-    return admin && admin.role === 'admin' && admin.approved ? admin : null;
+    return admin && ['admin', 'superadmin'].includes(admin.role) && admin.approved ? admin : null;
 }
 
 function getMaterialOwnerForUser(user) {
     if (!user) return null;
+    if (user.role === 'superadmin') return 'all';
     if (user.role === 'admin') return user._id;
     return user.adminId || null;
 }
@@ -48,6 +49,7 @@ async function canAccessMaterial(mat, userId) {
     if (!user || !user.approved) return false;
 
     const ownerId = getMaterialOwnerForUser(user);
+    if (ownerId === 'all') return true;
     return Boolean(ownerId && idEquals(ownerId, mat.createdBy));
 }
 
@@ -83,7 +85,9 @@ router.get('/', async (req, res) => {
             }
 
             const ownerId = getMaterialOwnerForUser(user);
-            query = ownerId
+            query = ownerId === 'all'
+                ? {}
+                : ownerId
                 ? ownerScope(ownerId)
                 : { $or: [{ createdBy: { $exists: false } }, { createdBy: null }] };
         }
@@ -208,7 +212,7 @@ router.delete('/:id', async (req, res) => {
 
         const mat = await Material.findById(req.params.id);
         if (!mat) return res.status(404).json({ success: false });
-        if (mat.createdBy && !idEquals(mat.createdBy, admin._id)) {
+        if (admin.role !== 'superadmin' && mat.createdBy && !idEquals(mat.createdBy, admin._id)) {
             return res.status(403).json({ success: false, message: 'This material belongs to another admin.' });
         }
 
@@ -263,7 +267,7 @@ router.get('/download/:id', async (req, res) => {
         if (!user) return res.status(403).json({ success: false, message: 'User not found' });
 
         // Allow admins or pro plan users to download
-        if (user.role !== 'admin' && user.plan !== 'pro') {
+        if (!['admin', 'superadmin'].includes(user.role) && user.plan !== 'pro') {
             return res.status(403).json({ success: false, message: 'Download is available only for upgraded users. Please upgrade your plan.' });
         }
 

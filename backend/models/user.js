@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     branch: String,
     semester: String,
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, default: null },
-    role: { type: String, enum: ['student', 'admin'], default: 'student' },
+    role: { type: String, enum: ['student', 'admin', 'superadmin'], default: 'student' },
     approved: { type: Boolean, default: false },
     // Billing / plan: 'free' users have limited AI queries and cannot download materials
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },

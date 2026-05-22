@@ -6,7 +6,7 @@
 (function () {
     if (DataStore.isLoggedIn()) {
         const user = DataStore.getCurrentUser();
-        window.location.href = user.role === 'admin' ? 'admin.html' : 'home.html';
+        window.location.href = user.role === 'superadmin' ? 'superadmin.html' : user.role === 'admin' ? 'admin.html' : 'home.html';
     }
 })();
 
@@ -36,6 +36,25 @@ function showCard(id) {
     document.getElementById('registerCard').style.display = 'none';
     document.getElementById(id).style.display = 'block';
 }
+
+function syncRegisterRoleFields() {
+    const role = document.querySelector('input[name="regRole"]:checked')?.value || 'student';
+    const adminField = document.getElementById('regAdminField');
+    const adminSelect = document.getElementById('regAdminId');
+    const submitText = document.getElementById('registerBtnText');
+    const badgeText = document.getElementById('registerBadgeText');
+
+    if (adminField) adminField.style.display = role === 'admin' ? 'none' : 'block';
+    if (adminSelect) adminSelect.required = role !== 'admin';
+    if (submitText) submitText.textContent = role === 'admin' ? 'Request Admin Access' : 'Send Request';
+    if (badgeText) badgeText.textContent = role === 'admin'
+        ? 'Admin requests are reviewed by the super admin'
+        : 'Your request will be sent to admin for approval';
+}
+
+document.querySelectorAll('input[name="regRole"]').forEach(input => {
+    input.addEventListener('change', syncRegisterRoleFields);
+});
 
 // --- Toast ---
 function showToast(msg, type = 'info') {
@@ -94,6 +113,7 @@ async function loadAdminOptions() {
 }
 
 loadAdminOptions();
+syncRegisterRoleFields();
 
 // --- Popup ---
 function showPopup(title, msg) {
@@ -104,6 +124,33 @@ function showPopup(title, msg) {
 
 function closePopup() {
     document.getElementById('popup').style.display = 'none';
+}
+
+function getDestination(user) {
+    return user.role === 'superadmin' ? 'superadmin.html' : user.role === 'admin' ? 'admin.html' : 'home.html';
+}
+
+function getRegistrationDetails() {
+    const name = document.getElementById('regName').value.trim();
+    const rollNo = document.getElementById('regRollNo').value.trim();
+    const enrollNo = document.getElementById('regEnrollNo').value.trim();
+    const branch = document.getElementById('regBranch').value;
+    const semester = document.getElementById('regSemester').value;
+    const adminId = document.getElementById('regAdminId')?.value || '';
+    const role = document.querySelector('input[name="regRole"]:checked')?.value || 'student';
+
+    return { name, rollNo, enrollNo, branch, semester, adminId, role };
+}
+
+function validateRegistrationDetails(details) {
+    return Boolean(
+        details.name &&
+        details.rollNo &&
+        details.enrollNo &&
+        details.branch &&
+        details.semester &&
+        (details.role === 'admin' || details.adminId)
+    );
 }
 
 // --- Login ---
@@ -124,7 +171,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         if (result.success) {
             showToast('Welcome back!', 'success');
             setTimeout(() => {
-                window.location.href = result.user.role === 'admin' ? 'admin.html' : 'home.html';
+                window.location.href = getDestination(result.user);
             }, 600);
         } else {
             showToast(result.message, 'error');
@@ -142,19 +189,22 @@ const googleBtn = document.getElementById('googleSignBtn');
 if (googleBtn) {
     googleBtn.addEventListener('click', async () => {
         const adminId = document.getElementById('loginAdminId')?.value || '';
-        if (!adminId) {
-            showToast('Select your admin before Google sign-in', 'warning');
-            document.getElementById('loginAdminId')?.focus();
+        const rollNo = document.getElementById('loginRollNo').value.trim();
+        const enrollNo = document.getElementById('loginEnrollNo').value.trim();
+
+        if (!rollNo || !enrollNo) {
+            showToast('Fill roll and enrollment before Google sign-in', 'warning');
+            document.getElementById(!rollNo ? 'loginRollNo' : 'loginEnrollNo')?.focus();
             return;
         }
 
         googleBtn.disabled = true;
         try {
-            const result = await DataStore.googleSignIn(adminId);
+            const result = await DataStore.googleSignIn({ mode: 'login', rollNo, enrollNo, adminId });
             if (result && result.success) {
                 showToast('Welcome back!', 'success');
                 setTimeout(() => {
-                    window.location.href = result.user.role === 'admin' ? 'admin.html' : 'home.html';
+                    window.location.href = getDestination(result.user);
                 }, 600);
             } else {
                 showToast(result.message || 'Google sign-in failed', 'error');
@@ -170,14 +220,9 @@ if (googleBtn) {
 // --- Register ---
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('regName').value.trim();
-    const rollNo = document.getElementById('regRollNo').value.trim();
-    const enrollNo = document.getElementById('regEnrollNo').value.trim();
-    const branch = document.getElementById('regBranch').value;
-    const semester = document.getElementById('regSemester').value;
-    const adminId = document.getElementById('regAdminId')?.value || '';
+    const details = getRegistrationDetails();
 
-    if (!name || !rollNo || !enrollNo || !branch || !semester || !adminId) {
+    if (!validateRegistrationDetails(details)) {
         showToast('Fill all fields', 'error'); return;
     }
 
@@ -186,10 +231,11 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     btn.disabled = true;
 
     try {
-        const result = await DataStore.register({ name, rollNo, enrollNo, branch, semester, adminId });
+        const result = await DataStore.register(details);
         if (result.success) {
             showPopup('Request Sent!', result.message);
             document.getElementById('registerForm').reset();
+            syncRegisterRoleFields();
             setTimeout(() => showCard('loginCard'), 1000);
         } else {
             showToast(result.message, 'error');
@@ -201,6 +247,39 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         btn.disabled = false;
     }
 });
+
+const googleRegisterBtn = document.getElementById('googleRegisterBtn');
+if (googleRegisterBtn) {
+    googleRegisterBtn.addEventListener('click', async () => {
+        const details = getRegistrationDetails();
+        if (!validateRegistrationDetails(details)) {
+            showToast('Fill all fields before Google registration', 'error');
+            return;
+        }
+
+        googleRegisterBtn.disabled = true;
+        try {
+            const result = await DataStore.googleSignIn({ ...details, mode: 'register' });
+            if (result && result.success) {
+                showToast('Welcome back!', 'success');
+                setTimeout(() => {
+                    window.location.href = getDestination(result.user);
+                }, 600);
+            } else if (result && result.pending) {
+                showPopup('Request Sent!', result.message || 'Your request is pending approval.');
+                document.getElementById('registerForm').reset();
+                syncRegisterRoleFields();
+                setTimeout(() => showCard('loginCard'), 1000);
+            } else {
+                showToast((result && result.message) || 'Google registration failed', 'error');
+            }
+        } catch (err) {
+            showToast(err.message || 'Google registration cancelled or failed', 'error');
+        } finally {
+            googleRegisterBtn.disabled = false;
+        }
+    });
+}
 
 // Popup backdrop
 document.getElementById('popup').addEventListener('click', (e) => {
