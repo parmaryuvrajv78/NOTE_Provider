@@ -200,6 +200,22 @@ const DataStore = (() => {
         return await res.json();
     }
 
+    async function getQuizScores(materialId = '') {
+        const params = { userId: getCurrentUserId() };
+        if (materialId) params.materialId = materialId;
+        const res = await fetch(appendQuery(`${API_BASE}/materials/quiz-scores`, params));
+        return await res.json();
+    }
+
+    async function submitQuizScore(materialId, answers) {
+        const res = await fetch(`${API_BASE}/materials/quiz-scores`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getCurrentUserId(), materialId, answers })
+        });
+        return await res.json();
+    }
+
     // --- Favorites (Keep in LocalStorage per device) ---
     function getFavorites() {
         const user = getCurrentUser();
@@ -311,7 +327,7 @@ const DataStore = (() => {
         upgradeUser,
         getSuperAdminData, approveAdmin, rejectAdmin, removeAdmin,
         approveStudent, rejectStudent, removeStudent, upgradeStudent, deleteAnyMaterial,
-        getMaterials, uploadMaterial, deleteMaterial,
+        getMaterials, uploadMaterial, deleteMaterial, getQuizScores, submitQuizScore,
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,

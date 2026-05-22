@@ -91,18 +91,15 @@ if (googleClientID && googleClientSecret) {
             const User = require('./models/user');
             const state = parseGoogleState(req.query.state);
             const mode = state.mode === 'register' ? 'register' : 'login';
-            const requestedRole = state.role === 'admin' ? 'admin' : 'student';
             const adminId = String(state.adminId || '').trim();
-            const rollNo = normalizeUpper(state.rollNo);
-            const enrollNo = normalizeUpper(state.enrollNo);
-            const branch = String(state.branch || '').trim();
-            const semester = String(state.semester || '').trim();
+            const phone = String(state.phone || '').trim();
+            const instituteName = String(state.instituteName || '').trim();
+            const requestedRole = state.role === 'admin' || (mode === 'register' && phone && instituteName) ? 'admin' : 'student';
+            const rollNo = requestedRole === 'admin' ? '' : normalizeUpper(state.rollNo);
+            const enrollNo = requestedRole === 'admin' ? '' : normalizeUpper(state.enrollNo);
             const email = (profile.emails && profile.emails[0] && profile.emails[0].value || '').toLowerCase();
             const name = String(state.name || profile.displayName || (email ? email.split('@')[0] : 'Google User')).trim();
-
-            if (!rollNo || !enrollNo) {
-                return done(null, false, { message: 'Roll and enrollment numbers are required before Google sign-in.' });
-            }
+            const adminIdentifier = normalizeUpper(phone || state.rollNo);
 
             let user = await User.findOne({ googleId: profile.id });
             if (!user && email) {
@@ -110,12 +107,15 @@ if (googleClientID && googleClientSecret) {
             }
             if (!user && mode === 'login') {
                 user = await User.findOne({
-                    rollNo,
-                    enrollNo,
-                    role: { $in: ['admin', 'superadmin'] }
+                    role: { $in: ['admin', 'superadmin'] },
+                    $or: [
+                        { adminCode: rollNo },
+                        { rollNo },
+                        { phone: phone || rollNo }
+                    ]
                 });
 
-                if (!user) {
+                if (!user && rollNo && enrollNo) {
                     const studentQuery = { rollNo, enrollNo, role: 'student' };
                     if (adminId) {
                         studentQuery.$or = [
@@ -132,8 +132,19 @@ if (googleClientID && googleClientSecret) {
                 if (user.googleId && user.googleId !== profile.id) {
                     return done(null, false, { message: 'These details are already linked to another Google account.' });
                 }
-                if (normalizeUpper(user.rollNo) !== rollNo || normalizeUpper(user.enrollNo) !== enrollNo) {
-                    return done(null, false, { message: 'Google account does not match the entered roll/enrollment details.' });
+                if (mode === 'register' && requestedRole === 'admin' && user.role === 'student') {
+                    return done(null, false, { message: 'This Google account is already registered as a student. Use a different Google account for teacher access.' });
+                }
+                if (mode === 'register' && requestedRole === 'student' && ['admin', 'superadmin'].includes(user.role)) {
+                    return done(null, false, { message: 'This Google account is already registered as a teacher/admin.' });
+                }
+                if (requestedRole === 'student' && user.role === 'student' && (rollNo || enrollNo)) {
+                    if (!rollNo || !enrollNo || normalizeUpper(user.rollNo) !== rollNo || normalizeUpper(user.enrollNo) !== enrollNo) {
+                        return done(null, false, { message: 'Google account does not match the entered roll/enrollment details.' });
+                    }
+                }
+                if (['admin', 'superadmin'].includes(user.role) && adminIdentifier && ![normalizeUpper(user.adminCode), normalizeUpper(user.rollNo), String(user.phone || '').toUpperCase()].includes(adminIdentifier)) {
+                    return done(null, false, { message: 'Google account does not match the entered admin ID.' });
                 }
 
                 let changed = false;
@@ -160,32 +171,42 @@ if (googleClientID && googleClientSecret) {
                 return done(null, false, { message: 'Google account not found. Please register with all required details first.' });
             }
 
-            if (!name || !branch || !semester) {
-                return done(null, false, { message: 'Name, branch, and semester are required before Google registration.' });
-            }
-
             if (requestedRole === 'admin') {
+                if (!name || !phone || !instituteName) {
+                    return done(null, false, { message: 'Teacher name, teacher ID, and institute name are required before Google registration.' });
+                }
+                const adminCode = phone.toUpperCase();
+                const duplicateChecks = [{ phone }, { adminCode }];
+                if (instituteName) {
+                    duplicateChecks.push({ instituteName: new RegExp(`^${instituteName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+                }
                 const exists = await User.findOne({
                     role: { $in: ['admin', 'superadmin'] },
-                    $or: [{ rollNo }, { enrollNo }]
+                    $or: duplicateChecks
                 });
                 if (exists) {
-                    return done(null, false, { message: 'Roll or Enrollment Number already exists.' });
+                    return done(null, false, { message: 'Teacher ID already exists.' });
                 }
 
                 user = new User({
                     name,
                     googleId: profile.id,
                     email,
-                    rollNo,
-                    enrollNo,
-                    branch,
-                    semester,
+                    phone,
+                    instituteName,
+                    adminCode,
+                    rollNo: adminCode,
+                    enrollNo: adminCode,
+                    branch: 'Teacher',
                     role: 'admin',
                     approved: false
                 });
                 await user.save();
                 return done(null, user, { message: 'Google admin request sent to super admin for approval.' });
+            }
+
+            if (!name || !rollNo || !enrollNo) {
+                return done(null, false, { message: 'Student name, roll number, and enrollment number are required before Google registration.' });
             }
 
             if (!isValidObjectId(adminId)) {
@@ -210,10 +231,9 @@ if (googleClientID && googleClientSecret) {
                 name,
                 googleId: profile.id,
                 email,
+                instituteName: admin.instituteName,
                 rollNo,
                 enrollNo,
-                branch,
-                semester,
                 adminId: admin._id,
                 role: 'student',
                 approved: false

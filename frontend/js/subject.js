@@ -79,10 +79,20 @@ const subjectName = urlParams.get('name') || 'Unknown Subject';
 document.getElementById('subjectTitle').textContent = subjectName;
 
 let subjectMaterials = [];
+let quizScoresByMaterial = {};
 
 async function loadSubjectData() {
     try {
-        const allMaterials = await DataStore.getMaterials();
+        const [allMaterials, scoreRes] = await Promise.all([
+            DataStore.getMaterials(),
+            DataStore.getQuizScores()
+        ]);
+        quizScoresByMaterial = {};
+        if (scoreRes && scoreRes.success && Array.isArray(scoreRes.scores)) {
+            scoreRes.scores.forEach(score => {
+                quizScoresByMaterial[score.materialId] = score;
+            });
+        }
         subjectMaterials = allMaterials.filter(m => m.subject.trim().toLowerCase() === subjectName.trim().toLowerCase());
         renderMaterials();
     } catch (err) {
@@ -99,6 +109,11 @@ function toggleFav(e, id) {
 
 function createCard(m) {
     const isFav = DataStore.isFavorite(m.id || m._id);
+    const materialId = m.id || m._id;
+    const savedScore = m.category === 'Quiz' ? quizScoresByMaterial[materialId] : null;
+    const scoreText = savedScore
+        ? `<span class="mat-tag">Last: ${savedScore.score}/${savedScore.total} (${savedScore.percentage}%)</span>`
+        : '';
     const card = document.createElement('div');
     card.className = 'mat-card';
     card.innerHTML = `
@@ -109,6 +124,7 @@ function createCard(m) {
             <div style="flex:1">
                 <div class="mat-title">${esc(m.title)}</div>
                 <span class="mat-subject">${esc(m.subject)}</span>
+                ${scoreText}
             </div>
             <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${m.id || m._id}')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -488,7 +504,7 @@ function nextQuestion() {
     }
 }
 
-function submitQuiz() {
+async function submitQuiz() {
     if (!currentQuiz || !currentQuiz.questions) return;
 
     let score = 0;
@@ -499,8 +515,24 @@ function submitQuiz() {
     });
 
     const percentage = Math.round((score / currentQuiz.questions.length) * 100);
-    showToast(`Quiz Submitted! Score: ${score}/${currentQuiz.questions.length} (${percentage}%)`, 'success');
-    closeQuizModal();
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+
+    try {
+        const result = await DataStore.submitQuizScore(currentQuiz.id || currentQuiz._id, quizAnswers);
+        if (result && result.success) {
+            quizScoresByMaterial[result.score.materialId] = result.score;
+            showToast(`Quiz Saved! Score: ${result.score.score}/${result.score.total} (${result.score.percentage}%)`, 'success');
+            renderMaterials();
+        } else {
+            showToast((result && result.message) || `Quiz Submitted! Score: ${score}/${currentQuiz.questions.length} (${percentage}%)`, 'error');
+        }
+    } catch (err) {
+        showToast('Score could not be saved. Please try again.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        closeQuizModal();
+    }
 }
 
 // Close quiz modal when clicking overlay

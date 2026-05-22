@@ -42,7 +42,7 @@ function avatarText(name, fallback = 'U') {
 function adminName(user) {
     if (!user || !user.adminId) return 'Unassigned';
     if (typeof user.adminId === 'string') return user.adminId;
-    return user.adminId.name || user.adminId.rollNo || 'Admin';
+    return user.adminId.instituteName || user.adminId.name || user.adminId.adminCode || user.adminId.rollNo || 'Admin';
 }
 
 async function refreshData() {
@@ -78,8 +78,8 @@ function renderPendingAdmins(admins) {
             <div class="user-info">
                 <div class="avatar-circle">${avatarText(admin.name, 'A')}</div>
                 <div>
-                    <div class="user-name">${esc(admin.name)}</div>
-                    <div class="user-meta">${esc(admin.rollNo)} | ${esc(admin.enrollNo)} | ${esc(admin.branch || 'Admin')}</div>
+                    <div class="user-name">${esc(admin.name)} <span class="nav-tag">${esc(admin.instituteName || 'Institute')}</span></div>
+                    <div class="user-meta">Admin ID: ${esc(admin.adminCode || admin.phone || admin.rollNo)} | Mobile: ${esc(admin.phone || '-')}</div>
                 </div>
             </div>
             <div class="user-actions">
@@ -105,8 +105,8 @@ function renderAdmins(admins) {
             <div class="user-info">
                 <div class="avatar-circle">${avatarText(admin.name, 'A')}</div>
                 <div>
-                    <div class="user-name">${esc(admin.name)}</div>
-                    <div class="user-meta">${esc(admin.rollNo)} | ${esc(admin.enrollNo)}</div>
+                    <div class="user-name">${esc(admin.name)} <span class="nav-tag">${esc(admin.instituteName || 'Institute')}</span></div>
+                    <div class="user-meta">Admin ID: ${esc(admin.adminCode || admin.phone || admin.rollNo)} | Mobile: ${esc(admin.phone || '-')}</div>
                 </div>
             </div>
             <div class="user-actions">
@@ -132,7 +132,7 @@ function renderStudents(pending, students) {
                 <div class="avatar-circle">${avatarText(student.name, 'S')}</div>
                 <div>
                     <div class="user-name">${esc(student.name)} <span class="nav-tag">PENDING</span></div>
-                    <div class="user-meta">${esc(student.rollNo)} | ${esc(student.enrollNo)} | Admin: ${esc(adminName(student))}</div>
+                    <div class="user-meta">${esc(student.instituteName || '')} | ${esc(student.rollNo)} | ${esc(student.enrollNo)} | Admin: ${esc(adminName(student))}</div>
                 </div>
             </div>
             <div class="user-actions">
@@ -151,7 +151,7 @@ function renderStudents(pending, students) {
                 <div class="avatar-circle">${avatarText(student.name, 'S')}</div>
                 <div>
                     <div class="user-name">${esc(student.name)}</div>
-                    <div class="user-meta">${esc(student.rollNo)} | Plan: ${esc(student.plan || 'free')} | Admin: ${esc(adminName(student))}</div>
+                    <div class="user-meta">${esc(student.instituteName || '')} | ${esc(student.rollNo)} | Plan: ${esc(student.plan || 'free')} | Admin: ${esc(adminName(student))}</div>
                 </div>
             </div>
             <div class="user-actions">

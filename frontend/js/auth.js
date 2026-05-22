@@ -41,15 +41,43 @@ function syncRegisterRoleFields() {
     const role = document.querySelector('input[name="regRole"]:checked')?.value || 'student';
     const adminField = document.getElementById('regAdminField');
     const adminSelect = document.getElementById('regAdminId');
+    const phoneField = document.getElementById('regPhoneField');
+    const phoneInput = document.getElementById('regPhone');
+    const instituteField = document.getElementById('regInstituteField');
+    const instituteInput = document.getElementById('regInstituteName');
+    const nameLabel = document.getElementById('regNameLabel');
+    const nameInput = document.getElementById('regName');
+    const rollField = document.getElementById('regRollField');
+    const rollInput = document.getElementById('regRollNo');
+    const enrollField = document.getElementById('regEnrollField');
+    const enrollInput = document.getElementById('regEnrollNo');
     const submitText = document.getElementById('registerBtnText');
     const badgeText = document.getElementById('registerBadgeText');
+    const googleRegisterButton = document.getElementById('googleRegisterBtn');
+    const isAdmin = role === 'admin';
 
-    if (adminField) adminField.style.display = role === 'admin' ? 'none' : 'block';
-    if (adminSelect) adminSelect.required = role !== 'admin';
-    if (submitText) submitText.textContent = role === 'admin' ? 'Request Admin Access' : 'Send Request';
-    if (badgeText) badgeText.textContent = role === 'admin'
-        ? 'Admin requests are reviewed by the super admin'
+    if (adminField) adminField.style.display = isAdmin ? 'none' : 'block';
+    if (phoneField) phoneField.style.display = isAdmin ? 'block' : 'none';
+    if (instituteField) instituteField.style.display = isAdmin ? 'block' : 'none';
+    if (rollField) rollField.style.display = isAdmin ? 'none' : 'block';
+    if (enrollField) enrollField.style.display = isAdmin ? 'none' : 'block';
+    if (adminSelect) adminSelect.required = !isAdmin;
+    if (phoneInput) phoneInput.required = isAdmin;
+    if (instituteInput) instituteInput.required = isAdmin;
+    if (rollInput) rollInput.required = !isAdmin;
+    if (enrollInput) enrollInput.required = !isAdmin;
+    if (adminSelect) adminSelect.disabled = isAdmin;
+    if (phoneInput) phoneInput.disabled = !isAdmin;
+    if (instituteInput) instituteInput.disabled = !isAdmin;
+    if (rollInput) rollInput.disabled = isAdmin;
+    if (enrollInput) enrollInput.disabled = isAdmin;
+    if (nameLabel) nameLabel.textContent = isAdmin ? 'Teacher Name' : 'Student Name';
+    if (nameInput) nameInput.placeholder = isAdmin ? 'Teacher full name' : 'Student full name';
+    if (submitText) submitText.textContent = isAdmin ? 'Request Teacher Access' : 'Request Student with Google';
+    if (badgeText) badgeText.textContent = isAdmin
+        ? 'Teacher requests are reviewed by the super admin'
         : 'Your request will be sent to admin for approval';
+    if (googleRegisterButton) googleRegisterButton.style.display = isAdmin ? 'none' : 'flex';
 }
 
 document.querySelectorAll('input[name="regRole"]').forEach(input => {
@@ -132,24 +160,26 @@ function getDestination(user) {
 
 function getRegistrationDetails() {
     const name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone')?.value.trim() || '';
+    const instituteName = document.getElementById('regInstituteName')?.value.trim() || '';
     const rollNo = document.getElementById('regRollNo').value.trim();
     const enrollNo = document.getElementById('regEnrollNo').value.trim();
-    const branch = document.getElementById('regBranch').value;
-    const semester = document.getElementById('regSemester').value;
     const adminId = document.getElementById('regAdminId')?.value || '';
     const role = document.querySelector('input[name="regRole"]:checked')?.value || 'student';
 
-    return { name, rollNo, enrollNo, branch, semester, adminId, role };
+    return { name, phone, instituteName, rollNo, enrollNo, adminId, role };
 }
 
 function validateRegistrationDetails(details) {
+    if (details.role === 'admin') {
+        return Boolean(details.name && details.phone && details.instituteName);
+    }
+
     return Boolean(
         details.name &&
         details.rollNo &&
         details.enrollNo &&
-        details.branch &&
-        details.semester &&
-        (details.role === 'admin' || details.adminId)
+        details.adminId
     );
 }
 
@@ -160,7 +190,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const enrollNo = document.getElementById('loginEnrollNo').value.trim();
     const adminId = document.getElementById('loginAdminId')?.value || '';
 
-    if (!rollNo || !enrollNo) { showToast('Please fill both fields', 'error'); return; }
+    const isSuperAdminLogin = rollNo.toUpperCase() === 'PU50' && enrollNo === '2503051050905';
+    if ((enrollNo || adminId) && !isSuperAdminLogin) {
+        showToast('Students must sign in with Google.', 'error');
+        return;
+    }
+
+    if (!rollNo) { showToast('Enter admin ID', 'error'); return; }
 
     const btn = document.getElementById('loginBtn');
     btn.classList.add('loading');
@@ -192,15 +228,13 @@ if (googleBtn) {
         const rollNo = document.getElementById('loginRollNo').value.trim();
         const enrollNo = document.getElementById('loginEnrollNo').value.trim();
 
-        if (!rollNo || !enrollNo) {
-            showToast('Fill roll and enrollment before Google sign-in', 'warning');
-            document.getElementById(!rollNo ? 'loginRollNo' : 'loginEnrollNo')?.focus();
-            return;
-        }
-
         googleBtn.disabled = true;
         try {
-            const result = await DataStore.googleSignIn({ mode: 'login', rollNo, enrollNo, adminId });
+            const payload = { mode: 'login' };
+            if (rollNo) payload.rollNo = rollNo;
+            if (enrollNo) payload.enrollNo = enrollNo;
+            if (adminId) payload.adminId = adminId;
+            const result = await DataStore.googleSignIn(payload);
             if (result && result.success) {
                 showToast('Welcome back!', 'success');
                 setTimeout(() => {
@@ -217,68 +251,102 @@ if (googleBtn) {
     });
 }
 
-// --- Register ---
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const details = getRegistrationDetails();
+const googleRegisterBtn = document.getElementById('googleRegisterBtn');
+const registerBtn = document.getElementById('registerBtn');
 
+function showRegistrationValidationError(details) {
+    showToast(details.role === 'admin'
+        ? 'Fill teacher name, teacher ID, and institute name'
+        : 'Fill admin, student name, roll number, and enrollment number', 'error');
+}
+
+function setRegistrationBusy(isBusy) {
+    [googleRegisterBtn, registerBtn].forEach(btn => {
+        if (btn) btn.disabled = isBusy;
+    });
+    registerBtn?.classList.toggle('loading', isBusy);
+}
+
+async function startGoogleRegistration() {
+    const details = getRegistrationDetails();
     if (!validateRegistrationDetails(details)) {
-        showToast('Fill all fields', 'error'); return;
+        showRegistrationValidationError(details);
+        return;
     }
 
-    const btn = document.getElementById('registerBtn');
-    btn.classList.add('loading');
-    btn.disabled = true;
+    setRegistrationBusy(true);
 
     try {
-        const result = await DataStore.register(details);
-        if (result.success) {
-            showPopup('Request Sent!', result.message);
+        const googleDetails = { ...details, mode: 'register' };
+        if (details.role === 'admin') {
+            delete googleDetails.adminId;
+            delete googleDetails.rollNo;
+            delete googleDetails.enrollNo;
+        }
+        const result = await DataStore.googleSignIn(googleDetails);
+        if (result && result.success) {
+            showToast('Welcome back!', 'success');
+            setTimeout(() => {
+                window.location.href = getDestination(result.user);
+            }, 600);
+        } else if (result && result.pending) {
+            showPopup('Request Sent!', result.message || 'Your request is pending approval.');
             document.getElementById('registerForm').reset();
             syncRegisterRoleFields();
             setTimeout(() => showCard('loginCard'), 1000);
         } else {
-            showToast(result.message, 'error');
+            showToast((result && result.message) || 'Google registration failed', 'error');
+        }
+    } catch (err) {
+        showToast(err.message || 'Google registration cancelled or failed', 'error');
+    } finally {
+        setRegistrationBusy(false);
+    }
+}
+
+async function startTeacherRegistration(details) {
+    setRegistrationBusy(true);
+
+    try {
+        const result = await DataStore.register({
+            role: 'admin',
+            name: details.name,
+            phone: details.phone,
+            instituteName: details.instituteName
+        });
+
+        if (result && result.success) {
+            showPopup('Request Sent!', result.message || 'Teacher request sent to super admin.');
+            document.getElementById('registerForm').reset();
+            syncRegisterRoleFields();
+            setTimeout(() => showCard('loginCard'), 1000);
+        } else {
+            showToast((result && result.message) || 'Teacher request failed', 'error');
         }
     } catch (err) {
         showToast('Server connection failed', 'error');
     } finally {
-        btn.classList.remove('loading');
-        btn.disabled = false;
+        setRegistrationBusy(false);
     }
+}
+
+// --- Register ---
+document.getElementById('registerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const details = getRegistrationDetails();
+    if (!validateRegistrationDetails(details)) {
+        showRegistrationValidationError(details);
+        return;
+    }
+    if (details.role === 'admin') {
+        startTeacherRegistration(details);
+        return;
+    }
+    startGoogleRegistration();
 });
 
-const googleRegisterBtn = document.getElementById('googleRegisterBtn');
 if (googleRegisterBtn) {
-    googleRegisterBtn.addEventListener('click', async () => {
-        const details = getRegistrationDetails();
-        if (!validateRegistrationDetails(details)) {
-            showToast('Fill all fields before Google registration', 'error');
-            return;
-        }
-
-        googleRegisterBtn.disabled = true;
-        try {
-            const result = await DataStore.googleSignIn({ ...details, mode: 'register' });
-            if (result && result.success) {
-                showToast('Welcome back!', 'success');
-                setTimeout(() => {
-                    window.location.href = getDestination(result.user);
-                }, 600);
-            } else if (result && result.pending) {
-                showPopup('Request Sent!', result.message || 'Your request is pending approval.');
-                document.getElementById('registerForm').reset();
-                syncRegisterRoleFields();
-                setTimeout(() => showCard('loginCard'), 1000);
-            } else {
-                showToast((result && result.message) || 'Google registration failed', 'error');
-            }
-        } catch (err) {
-            showToast(err.message || 'Google registration cancelled or failed', 'error');
-        } finally {
-            googleRegisterBtn.disabled = false;
-        }
-    });
+    googleRegisterBtn.addEventListener('click', startGoogleRegistration);
 }
 
 // Popup backdrop

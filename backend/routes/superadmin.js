@@ -35,8 +35,8 @@ router.get('/data', async (req, res) => {
         const [pendingAdmins, admins, pendingStudents, students, materials] = await Promise.all([
             User.find({ role: 'admin', approved: false }).sort({ createdAt: -1 }),
             User.find({ role: 'admin', approved: true }).sort({ name: 1 }),
-            User.find({ role: 'student', approved: false }).populate('adminId', 'name rollNo').sort({ createdAt: -1 }),
-            User.find({ role: 'student', approved: true }).populate('adminId', 'name rollNo').sort({ createdAt: -1 }),
+            User.find({ role: 'student', approved: false }).populate('adminId', 'name rollNo instituteName adminCode').sort({ createdAt: -1 }),
+            User.find({ role: 'student', approved: true }).populate('adminId', 'name rollNo instituteName adminCode').sort({ createdAt: -1 }),
             Material.find({}).populate('createdBy', 'name rollNo role').sort({ createdAt: -1 })
         ]);
 

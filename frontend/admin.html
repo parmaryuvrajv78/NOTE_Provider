@@ -121,6 +121,7 @@
             <button class="tab-btn active" data-tab="pending">⏳ Pending</button>
             <button class="tab-btn" data-tab="students">👨‍🎓 Students</button>
             <button class="tab-btn" data-tab="materials">📚 Materials</button>
+            <button class="tab-btn" data-tab="scores">Quiz Scores</button>
         </div>
 
         <!-- Pending Tab -->
@@ -138,6 +139,15 @@
                 <h2>All Students</h2>
                 <div id="studentsList"></div>
                 <div id="studentsEmpty" class="empty-state" style="display:none;"><h3>No students yet</h3></div>
+            </div>
+        </div>
+
+        <!-- Quiz Scores Tab -->
+        <div class="tab-panel" id="scoresTab">
+            <div class="section-card">
+                <h2>Student Quiz Scores</h2>
+                <div id="quizScoresList"></div>
+                <div id="quizScoresEmpty" class="empty-state" style="display:none;"><h3>No quiz scores yet</h3></div>
             </div>
         </div>
 

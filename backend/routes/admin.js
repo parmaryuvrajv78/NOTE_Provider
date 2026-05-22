@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const Material = require('../models/material');
+const QuizScore = require('../models/quizScore');
 
 function idEquals(a, b) {
     return a && b && a.toString() === b.toString();
@@ -16,6 +17,29 @@ function ownerScope(field, ownerId, includeUnassigned = true) {
             { [field]: { $exists: false } },
             { [field]: null }
         ]
+    };
+}
+
+function serializeQuizScore(score) {
+    const obj = score.toObject();
+    const student = obj.userId && typeof obj.userId === 'object' ? obj.userId : null;
+    const material = obj.materialId && typeof obj.materialId === 'object' ? obj.materialId : null;
+
+    return {
+        id: obj._id.toString(),
+        userId: student && student._id ? student._id.toString() : String(obj.userId || ''),
+        studentName: student ? student.name : '',
+        studentRollNo: student ? student.rollNo : '',
+        materialId: material && material._id ? material._id.toString() : String(obj.materialId || ''),
+        quizTitle: obj.quizTitle || (material && material.title) || '',
+        subject: obj.subject || (material && material.subject) || '',
+        score: obj.score || 0,
+        total: obj.total || 0,
+        percentage: obj.percentage || 0,
+        bestScore: obj.bestScore || 0,
+        bestPercentage: obj.bestPercentage || 0,
+        attempts: obj.attempts || 0,
+        submittedAt: obj.submittedAt
     };
 }
 
@@ -52,6 +76,10 @@ router.get('/data', async (req, res) => {
             ...ownerScope('adminId', admin._id)
         });
         const materials = await Material.find(ownerScope('createdBy', admin._id)).sort({ createdAt: -1 });
+        const quizScores = await QuizScore.find({ adminId: admin._id })
+            .populate('userId', 'name rollNo enrollNo')
+            .populate('materialId', 'title subject')
+            .sort({ submittedAt: -1 });
 
         // format IDs for UI
         const formatUsers = arr => arr.map(u => ({ ...u.toObject(), id: u._id.toString() }));
@@ -60,7 +88,8 @@ router.get('/data', async (req, res) => {
         res.json({
             pending: formatUsers(pending),
             students: formatUsers(students),
-            materials: formatMats(materials)
+            materials: formatMats(materials),
+            quizScores: quizScores.map(serializeQuizScore)
         });
     } catch (err) {
         res.status(500).json({ success: false });

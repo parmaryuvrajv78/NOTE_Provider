@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const Material = require('../models/material');
 const User = require('../models/user');
+const QuizScore = require('../models/quizScore');
 const { upload, supabase, isSupabaseConfigured } = require('../middlewares/upload');
 
 function idEquals(a, b) {
@@ -62,6 +63,28 @@ function serializeMaterial(mat) {
     return { ...obj, id: mat._id.toString() };
 }
 
+function serializeQuizScore(score) {
+    const obj = score.toObject ? score.toObject() : score;
+    const material = obj.materialId && typeof obj.materialId === 'object' ? obj.materialId : null;
+    const student = obj.userId && typeof obj.userId === 'object' ? obj.userId : null;
+    return {
+        id: obj._id ? obj._id.toString() : obj.id,
+        userId: student && student._id ? student._id.toString() : String(obj.userId || ''),
+        studentName: student ? student.name : obj.studentName,
+        studentRollNo: student ? student.rollNo : obj.studentRollNo,
+        materialId: material && material._id ? material._id.toString() : String(obj.materialId || ''),
+        quizTitle: obj.quizTitle || (material && material.title) || '',
+        subject: obj.subject || (material && material.subject) || '',
+        score: obj.score || 0,
+        total: obj.total || 0,
+        percentage: obj.percentage || 0,
+        bestScore: obj.bestScore || 0,
+        bestPercentage: obj.bestPercentage || 0,
+        attempts: obj.attempts || 0,
+        submittedAt: obj.submittedAt
+    };
+}
+
 function ensureStorageConfigured(res) {
     if (!isSupabaseConfigured || !process.env.SUPABASE_BUCKET) {
         res.status(500).json({
@@ -96,6 +119,86 @@ router.get('/', async (req, res) => {
         res.json(materials.map(serializeMaterial));
     } catch (err) {
         res.status(500).json({ success: false });
+    }
+});
+
+// Quiz Scores: Student's saved quiz-wise scores
+router.get('/quiz-scores', async (req, res) => {
+    try {
+        const user = await getUser(req.query.userId);
+        if (!user || !user.approved) {
+            return res.status(403).json({ success: false, message: 'User not allowed to view quiz scores' });
+        }
+
+        const materialId = req.query.materialId;
+        const query = { userId: user._id };
+        if (materialId) query.materialId = materialId;
+
+        const scores = await QuizScore.find(query)
+            .populate('materialId', 'title subject category createdBy')
+            .sort({ submittedAt: -1 });
+
+        res.json({ success: true, scores: scores.map(serializeQuizScore) });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Could not load quiz scores' });
+    }
+});
+
+// Quiz Scores: Submit/update one student score for one quiz
+router.post('/quiz-scores', async (req, res) => {
+    try {
+        const { userId, materialId, answers } = req.body;
+        const user = await getUser(userId);
+        if (!user || !user.approved) {
+            return res.status(403).json({ success: false, message: 'User not allowed to submit quiz scores' });
+        }
+
+        const mat = await Material.findById(materialId);
+        if (!mat || mat.category !== 'Quiz' || !Array.isArray(mat.questions) || mat.questions.length === 0) {
+            return res.status(404).json({ success: false, message: 'Quiz not found' });
+        }
+
+        const allowedForUser = await canAccessMaterial(mat, userId);
+        if (!allowedForUser) {
+            return res.status(403).json({ success: false, message: 'This quiz is not available for your admin account.' });
+        }
+
+        const selectedAnswers = answers && typeof answers === 'object' ? answers : {};
+        let score = 0;
+        mat.questions.forEach((question, index) => {
+            if (Number(selectedAnswers[index]) === Number(question.correctAnswer)) score++;
+        });
+
+        const total = mat.questions.length;
+        const percentage = total ? Math.round((score / total) * 100) : 0;
+        const existing = await QuizScore.findOne({ userId: user._id, materialId: mat._id });
+        const bestScore = Math.max(existing ? existing.bestScore || 0 : 0, score);
+        const bestPercentage = Math.max(existing ? existing.bestPercentage || 0 : 0, percentage);
+
+        const saved = await QuizScore.findOneAndUpdate(
+            { userId: user._id, materialId: mat._id },
+            {
+                $set: {
+                    adminId: user.adminId || null,
+                    subject: mat.subject,
+                    quizTitle: mat.title,
+                    score,
+                    total,
+                    percentage,
+                    bestScore,
+                    bestPercentage,
+                    answers: selectedAnswers,
+                    submittedAt: new Date()
+                },
+                $setOnInsert: { createdAt: new Date() },
+                $inc: { attempts: 1 }
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true, score: serializeQuizScore(saved) });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Could not save quiz score' });
     }
 });
 

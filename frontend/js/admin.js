@@ -31,9 +31,9 @@ function showToast(msg, type = 'info') {
 }
 
 function esc(str) {
-    if (!str) return '';
+    if (str === null || str === undefined) return '';
     const d = document.createElement('div');
-    d.textContent = str;
+    d.textContent = String(str);
     return d.innerHTML;
 }
 
@@ -44,6 +44,7 @@ async function refreshData() {
         renderPending(data.pending);
         renderStudents(data.students);
         renderMaterials(data.materials);
+        renderQuizScores(data.quizScores || []);
         
         document.getElementById('statPending').textContent = data.pending.length;
         document.getElementById('statStudents').textContent = data.students.length;
@@ -94,7 +95,7 @@ function renderPending(pending) {
                 <div class="avatar-circle">${p.name[0].toUpperCase()}</div>
                 <div>
                     <div class="user-name">${esc(p.name)}</div>
-                    <div class="user-meta">${esc(p.rollNo)} | ${esc(p.enrollNo)} | ${esc(p.branch)}</div>
+                    <div class="user-meta">${esc(p.instituteName || '')} | ${esc(p.rollNo)} | ${esc(p.enrollNo)}</div>
                 </div>
             </div>
             <div class="user-actions">
@@ -119,11 +120,44 @@ function renderStudents(students) {
         row.innerHTML = `
             <div class="user-info">
                 <div class="avatar-circle">${u.name[0].toUpperCase()}</div>
-                <div><div class="user-name">${esc(u.name)}</div><div class="user-meta">${esc(u.rollNo)} • Plan: ${esc(u.plan || 'free')}</div></div>
+                <div><div class="user-name">${esc(u.name)}</div><div class="user-meta">${esc(u.instituteName || '')} | ${esc(u.rollNo)} | Plan: ${esc(u.plan || 'free')}</div></div>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
                 ${u.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeUser('${u.id}')">Upgrade</button>`}
                 <button class="btn btn-ghost btn-sm" onclick="removeUser('${u.id}')" style="color:var(--error)">Remove</button>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function renderQuizScores(scores) {
+    const list = document.getElementById('quizScoresList');
+    const empty = document.getElementById('quizScoresEmpty');
+    if (!list || !empty) return;
+
+    list.innerHTML = '';
+    if (!scores.length) {
+        list.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+
+    list.style.display = 'block';
+    empty.style.display = 'none';
+
+    scores.forEach(score => {
+        const row = document.createElement('div');
+        row.className = 'user-row';
+        const submitted = score.submittedAt ? new Date(score.submittedAt).toLocaleString() : 'Not available';
+        row.innerHTML = `
+            <div class="user-info">
+                <div class="avatar-circle">${esc(score.studentName || 'S')[0].toUpperCase()}</div>
+                <div>
+                    <div class="user-name">${esc(score.studentName || 'Student')} <span class="nav-tag">${esc(score.subject || 'Quiz')}</span></div>
+                    <div class="user-meta">${esc(score.quizTitle || 'Quiz')} | Roll: ${esc(score.studentRollNo || '-')} | Attempts: ${esc(score.attempts || 1)}</div>
+                    <div class="user-meta">Last: ${esc(score.score)}/${esc(score.total)} (${esc(score.percentage)}%) | Best: ${esc(score.bestScore)}/${esc(score.total)} (${esc(score.bestPercentage)}%) | ${esc(submitted)}</div>
+                </div>
             </div>
         `;
         list.appendChild(row);
