@@ -11,11 +11,23 @@
 })();
 
 const currentSuperAdmin = DataStore.getCurrentUser();
+function renderAvatar(el, currentUser, fallback = 'S') {
+    if (!el) return;
+    const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
+    if (currentUser && currentUser.profileImageUrl) {
+        el.innerHTML = `<img src="${esc(currentUser.profileImageUrl)}" alt="${esc(currentUser.name || 'Profile')}">`;
+        el.classList.add('has-image');
+    } else {
+        el.textContent = initial;
+        el.classList.remove('has-image');
+    }
+}
+
 if (currentSuperAdmin) {
     const navUser = document.querySelector('.nav-user');
     const avatar = navUser && navUser.querySelector('.avatar-circle');
     const label = navUser && navUser.querySelector('span');
-    if (avatar) avatar.textContent = currentSuperAdmin.name ? currentSuperAdmin.name[0].toUpperCase() : 'S';
+    renderAvatar(avatar, currentSuperAdmin);
     if (label) label.textContent = currentSuperAdmin.name || 'Super Admin';
 }
 
@@ -33,6 +45,74 @@ function esc(str) {
     const d = document.createElement('div');
     d.textContent = String(str);
     return d.innerHTML;
+}
+
+function refreshCurrentUserProfileUi() {
+    const updated = DataStore.getCurrentUser();
+    if (!updated) return;
+    renderAvatar(document.getElementById('superAdminProfileAvatar'), updated);
+    const navUser = document.querySelector('.nav-user');
+    const label = navUser && navUser.querySelector('span');
+    if (label) label.textContent = updated.name || 'Super Admin';
+}
+
+function openEditProfileModal() {
+    const current = DataStore.getCurrentUser();
+    if (!current) return;
+    document.getElementById('profileName').value = current.name || '';
+    document.getElementById('profileInstituteName').value = current.instituteName || '';
+    document.getElementById('profileBranch').value = current.branch || '';
+    document.getElementById('profileSemester').value = current.semester || '';
+    document.getElementById('profileImageFile').value = '';
+    document.getElementById('editProfileModal').style.display = 'flex';
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+}
+
+async function saveCurrentUserProfile(e) {
+    e.preventDefault();
+    const file = document.getElementById('profileImageFile').files[0];
+
+    try {
+        const details = {
+            name: document.getElementById('profileName').value.trim(),
+            instituteName: document.getElementById('profileInstituteName').value.trim(),
+            branch: document.getElementById('profileBranch').value.trim(),
+            semester: document.getElementById('profileSemester').value.trim()
+        };
+
+        if (!details.name || !details.instituteName) {
+            showToast('Name and institution are required', 'error');
+            return;
+        }
+
+        if (file && (!file.type || !file.type.startsWith('image/'))) {
+            showToast('Please select an image file', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('saveProfileBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        const res = await DataStore.updateProfile(details, file);
+        if (res.success) {
+            refreshCurrentUserProfileUi();
+            closeEditProfileModal();
+            showToast('Profile updated', 'success');
+        } else {
+            showToast(res.message || 'Profile update failed', 'error');
+        }
+    } catch (err) {
+        showToast('Profile update failed', 'error');
+    } finally {
+        const btn = document.getElementById('saveProfileBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+        }
+    }
 }
 
 function avatarText(name, fallback = 'U') {
@@ -370,19 +450,22 @@ function addQuizQuestion() {
     const qNum = container.querySelectorAll('.question-input-group').length + 1;
     const questionGroup = document.createElement('div');
     questionGroup.className = 'question-input-group';
-    questionGroup.style.cssText = 'padding: 16px; background: var(--bg); border: 1px solid var(--input-border); border-radius: 8px; margin-bottom: 12px;';
     questionGroup.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <label style="font-weight: 600; font-size: 14px;">Question ${qNum}</label>
-            <button type="button" onclick="this.closest('.question-input-group').remove()" class="btn btn-ghost" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+        <div class="question-card-head">
+            <label>Question ${qNum}</label>
+            <button type="button" onclick="this.closest('.question-input-group').remove()" class="btn btn-ghost btn-inline">Remove</button>
         </div>
-        <input type="text" class="question-text input-box" placeholder="Enter question" required style="padding-left: 12px; margin-bottom: 12px; width: 100%;">
-        <input type="text" class="option-input input-box" placeholder="Option 1" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
-        <input type="text" class="option-input input-box" placeholder="Option 2" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
-        <input type="text" class="option-input input-box" placeholder="Option 3" style="padding-left: 12px; margin-bottom: 6px; width: 100%;">
-        <input type="text" class="option-input input-box" placeholder="Option 4" style="padding-left: 12px; margin-bottom: 12px; width: 100%;">
-        <select class="correct-answer-select input-box" required style="padding-left: 12px; margin-bottom: 12px;"><option value="">Correct answer</option><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
-        <input type="text" class="explanation-input input-box" placeholder="Explanation (optional)" style="padding-left: 12px; width: 100%;">
+        <input type="text" class="question-text input-box" placeholder="Enter question" required>
+        <div class="options-grid">
+            <input type="text" class="option-input input-box" placeholder="Option 1">
+            <input type="text" class="option-input input-box" placeholder="Option 2">
+            <input type="text" class="option-input input-box" placeholder="Option 3">
+            <input type="text" class="option-input input-box" placeholder="Option 4">
+        </div>
+        <div class="answer-grid">
+            <select class="correct-answer-select input-box" required><option value="">Correct answer</option><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
+            <input type="text" class="explanation-input input-box" placeholder="Explanation (optional)">
+        </div>
     `;
     container.appendChild(questionGroup);
 }
@@ -399,6 +482,13 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 document.getElementById('logoutBtn').addEventListener('click', () => {
     DataStore.logout();
     window.location.href = 'index.html';
+});
+document.getElementById('editProfileBtn')?.addEventListener('click', openEditProfileModal);
+document.getElementById('closeEditProfileModal')?.addEventListener('click', closeEditProfileModal);
+document.getElementById('cancelEditProfileBtn')?.addEventListener('click', closeEditProfileModal);
+document.getElementById('editProfileForm')?.addEventListener('submit', saveCurrentUserProfile);
+document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'editProfileModal') closeEditProfileModal();
 });
 
 refreshData();

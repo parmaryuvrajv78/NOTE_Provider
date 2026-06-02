@@ -26,7 +26,7 @@
             </div>
             <div class="nav-right">
                 <div class="nav-user">
-                    <div class="avatar-circle" id="userAvatar">S</div>
+                    <div class="avatar-circle" id="userAvatar" role="button" tabindex="0" title="Account">S</div>
                     <span id="userName">Student</span>
                 </div>
                 <button class="btn-account" id="accountSidebarBtn" title="Account">
@@ -56,7 +56,7 @@
                     PREMIUM
                 </div>
                 <h2 id="welcomeMsg">Welcome! 👋</h2>
-                <p class="section-desc">Browse and download study materials for your semester</p>
+                <p class="section-desc" id="welcomeMeta">Browse and download study materials for your semester</p>
             </div>
         </section>
 
@@ -162,12 +162,15 @@
                     <span id="sidebarRole">Student</span>
                 </div>
             </div>
+            <button type="button" class="btn btn-secondary profile-edit-btn" id="editProfileBtn">Edit Profile</button>
 
             <div class="account-section">
                 <h3>Account Data</h3>
                 <div class="account-data-list">
                     <div class="account-data-row"><span>Roll No</span><strong id="sidebarRollNo">-</strong></div>
                     <div class="account-data-row"><span>Enrollment</span><strong id="sidebarEnrollNo">-</strong></div>
+                    <div class="account-data-row"><span>Institution</span><strong id="sidebarInstitute">-</strong></div>
+                    <div class="account-data-row"><span>Teacher</span><strong id="sidebarTeacher">-</strong></div>
                     <div class="account-data-row"><span>Branch</span><strong id="sidebarBranch">-</strong></div>
                     <div class="account-data-row"><span>Semester</span><strong id="sidebarSemester">-</strong></div>
                     <div class="account-data-row"><span>Status</span><strong id="sidebarStatus">Approved</strong></div>
@@ -211,6 +214,30 @@
                 <button type="button" class="btn btn-primary" id="upgradePlanBtn">Request Upgrade</button>
             </div>
         </aside>
+    </div>
+
+    <div id="editProfileModal" class="popup-overlay" style="display:none;">
+        <div class="mat-modal-card">
+            <button class="mat-modal-close" id="closeEditProfileModal" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="mat-modal-head">
+                <h2>Edit Profile</h2>
+            </div>
+            <form id="editProfileForm" class="edit-profile-form">
+                <div class="profile-form-grid">
+                    <div class="field"><label for="profileName">Name</label><input type="text" id="profileName" class="input-box" required></div>
+                    <div class="field"><label for="profileBranch">Branch</label><input type="text" id="profileBranch" class="input-box"></div>
+                    <div class="field"><label for="profileSemester">Semester</label><input type="text" id="profileSemester" class="input-box"></div>
+                    <div class="field" id="profileInstituteField" style="display:none;"><label for="profileInstituteName">Institution</label><input type="text" id="profileInstituteName" class="input-box"></div>
+                    <div class="field profile-image-field"><label for="profileImageFile">Profile Image</label><input type="file" id="profileImageFile" accept="image/*" class="input-box file-input"></div>
+                </div>
+                <div class="mat-modal-btns">
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save</button>
+                    <button type="button" class="btn btn-ghost" id="cancelEditProfileBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Bottom Navigation (Android Style) -->

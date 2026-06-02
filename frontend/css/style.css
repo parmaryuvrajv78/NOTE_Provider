@@ -263,6 +263,16 @@ body.dark .blue-badge {
     color: #fff;
 }
 
+.btn-secondary {
+    background: var(--blue-light);
+    color: var(--blue);
+    border: 1.5px solid transparent;
+}
+
+.btn-secondary:hover {
+    border-color: var(--blue);
+}
+
 .btn-success {
     background: var(--success);
     color: #fff;
@@ -645,6 +655,14 @@ body.dark .nav-tag {
 .btn-account svg {
     width: 15px;
     height: 15px;
+}
+
+.navbar #accountSidebarBtn {
+    display: none !important;
+}
+
+.navbar .nav-user .avatar-circle {
+    cursor: pointer;
 }
 
 @media (max-width: 768px) {
@@ -2995,5 +3013,472 @@ body.dark .message.ai pre {
         right: 16px;
         left: 16px;
         bottom: 140px;
+    }
+}
+.nav-user-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.nav-user-copy small {
+    max-width: 180px;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-upload-trigger {
+    border: 0;
+    cursor: pointer;
+    padding: 0;
+}
+
+.profile-edit-btn {
+    width: 100%;
+    margin: 12px 0 4px;
+}
+
+.avatar-circle.has-image,
+.account-avatar.has-image {
+    overflow: hidden;
+    padding: 0;
+}
+
+.avatar-circle.has-image img,
+.account-avatar.has-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== FORM UI POLISH ===== */
+.modern-upload-area {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    min-height: 172px;
+    margin-bottom: 20px;
+    padding: 34px 20px;
+    border: 1.5px dashed rgba(41, 121, 255, 0.55);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(41, 121, 255, 0.1), rgba(46, 204, 113, 0.06)),
+        var(--card);
+    color: var(--blue);
+    cursor: pointer;
+    text-align: center;
+}
+
+.modern-upload-area:hover {
+    border-color: var(--blue);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 34px rgba(41, 121, 255, 0.12);
+}
+
+.modern-upload-area svg {
+    width: 42px !important;
+    height: 42px !important;
+    margin-bottom: 2px !important;
+}
+
+.modern-upload-area h3 {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.modern-upload-form {
+    margin-bottom: 20px;
+    padding: 22px;
+    border: 1px solid var(--input-border);
+    border-radius: 18px;
+    background: var(--card);
+}
+
+.material-upload-form,
+.edit-profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-grid,
+.profile-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.profile-image-field {
+    grid-column: 1 / -1;
+}
+
+.material-upload-form .field,
+.edit-profile-form .field {
+    margin-bottom: 0;
+}
+
+.material-upload-form .field label,
+.edit-profile-form .field label,
+.quiz-builder-head label,
+.question-card-head label {
+    margin: 0 0 7px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+input.input-box,
+select.input-box,
+textarea.input-box {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--input-border);
+    border-radius: 14px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+select.input-box {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+        linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 20px,
+        calc(100% - 13px) 20px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+}
+
+input.input-box:focus,
+select.input-box:focus,
+textarea.input-box:focus {
+    border-color: var(--blue);
+    background: var(--card);
+    box-shadow: 0 0 0 4px rgba(41, 121, 255, 0.1);
+}
+
+.file-input {
+    min-height: 54px;
+    padding: 10px;
+}
+
+.file-input::file-selector-button {
+    margin-right: 12px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--blue);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quiz-builder {
+    padding: 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 16px;
+    background: var(--input-bg);
+}
+
+.quiz-builder-head,
+.question-card-head,
+.form-actions,
+.mat-modal-btns {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.questions-container {
+    display: grid;
+    gap: 12px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.question-input-group {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 16px;
+    background: var(--card);
+}
+
+.options-grid,
+.answer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.btn-inline {
+    width: auto;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 11px;
+    font-size: 12px;
+    flex: 0 0 auto;
+}
+
+.form-actions .btn,
+.mat-modal-btns .btn {
+    width: auto;
+    min-width: 120px;
+}
+
+.edit-profile-form {
+    margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+    .form-grid,
+    .profile-form-grid,
+    .options-grid,
+    .answer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modern-upload-form {
+        padding: 16px;
+    }
+
+    .quiz-builder-head,
+    .form-actions,
+    .mat-modal-btns {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .form-actions .btn,
+    .mat-modal-btns .btn,
+    .btn-inline {
+        width: 100%;
+    }
+}
+
+/* ===== RESPONSIVE PROFILE UI ===== */
+.account-profile {
+    align-items: center;
+    min-width: 0;
+}
+
+.account-profile > div:last-child,
+.nav-user-copy {
+    min-width: 0;
+}
+
+.account-profile h3,
+.account-profile span,
+.nav-user-copy span,
+.nav-user-copy small,
+#userName,
+#welcomeMeta {
+    overflow-wrap: anywhere;
+}
+
+.account-profile h3,
+.nav-user-copy span,
+#userName {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-avatar {
+    width: 74px;
+    height: 74px;
+    flex: 0 0 74px;
+    border-radius: 50%;
+}
+
+.avatar-circle {
+    flex: 0 0 34px;
+}
+
+#editProfileModal {
+    align-items: center;
+    padding: 18px;
+}
+
+#editProfileModal .mat-modal-card {
+    width: min(100%, 640px);
+    max-height: min(760px, calc(100dvh - 36px));
+    overflow-y: auto;
+}
+
+#editProfileModal .mat-modal-head {
+    padding-right: 34px;
+}
+
+#editProfileModal .mat-modal-head h2 {
+    overflow-wrap: anywhere;
+}
+
+#editProfileModal .profile-form-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+#editProfileModal input.input-box,
+#editProfileModal select.input-box,
+#editProfileModal .file-input {
+    min-width: 0;
+}
+
+.account-data-row {
+    gap: 12px;
+}
+
+.account-data-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+@media (min-width: 901px) {
+    #editProfileModal .mat-modal-card {
+        padding: 26px;
+    }
+
+    #editProfileModal input.input-box,
+    #editProfileModal select.input-box {
+        min-height: 50px;
+    }
+}
+
+@media (max-width: 900px) {
+    #editProfileModal .mat-modal-card {
+        width: min(100%, 560px);
+    }
+
+    .account-avatar {
+        width: 66px;
+        height: 66px;
+        flex-basis: 66px;
+    }
+}
+
+@media (max-width: 700px) {
+    #editProfileModal {
+        align-items: flex-end;
+        padding: 10px;
+    }
+
+    #editProfileModal .mat-modal-card {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        border-radius: 18px;
+        padding: 18px;
+    }
+
+    #editProfileModal .profile-form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #editProfileModal input.input-box,
+    #editProfileModal select.input-box,
+    #editProfileModal .file-input {
+        min-height: 46px;
+        font-size: 14px;
+    }
+
+    .file-input::file-selector-button {
+        margin-right: 8px;
+        padding: 9px 11px;
+    }
+
+    .account-profile {
+        gap: 12px;
+    }
+
+    .account-avatar {
+        width: 58px;
+        height: 58px;
+        flex-basis: 58px;
+    }
+
+    .account-data-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .account-data-row strong {
+        width: 100%;
+        text-align: left;
+    }
+}
+
+@media (max-width: 420px) {
+    #editProfileModal {
+        padding: 0;
+    }
+
+    #editProfileModal .mat-modal-card {
+        max-height: 100dvh;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .profile-edit-btn {
+        min-height: 44px;
+    }
+
+    .account-avatar {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+    }
+
+    .file-input {
+        white-space: normal;
+    }
+}
+
+/* Compact nav uses the profile picture as the account entry. */
+@media (max-width: 768px) {
+    .navbar .nav-right .nav-user {
+        display: flex !important;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 0;
+        margin-left: 0 !important;
+    }
+
+    .navbar .nav-right .nav-user > span,
+    .navbar .nav-right .nav-user .nav-user-copy {
+        display: none !important;
+    }
+
+    .navbar .nav-user .avatar-circle {
+        display: flex !important;
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        cursor: pointer;
+        font-size: 14px;
     }
 }

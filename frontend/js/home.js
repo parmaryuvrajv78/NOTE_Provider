@@ -9,9 +9,26 @@
 })();
 
 const user = DataStore.getCurrentUser();
+function renderAvatar(el, currentUser, fallback = 'S') {
+    if (!el) return;
+    const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
+    if (currentUser && currentUser.profileImageUrl) {
+        el.innerHTML = `<img src="${esc(currentUser.profileImageUrl)}" alt="${esc(currentUser.name || 'Profile')}">`;
+        el.classList.add('has-image');
+    } else {
+        el.textContent = initial;
+        el.classList.remove('has-image');
+    }
+}
+
 if (user) {
-    document.getElementById('userAvatar').textContent = user.name[0].toUpperCase();
+    renderAvatar(document.getElementById('userAvatar'), user);
     document.getElementById('userName').textContent = user.name;
+    const welcomeMeta = document.getElementById('welcomeMeta');
+    if (welcomeMeta) {
+        const meta = [user.instituteName, user.teacherName ? `Teacher: ${user.teacherName}` : ''].filter(Boolean);
+        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download study materials for your semester';
+    }
     document.getElementById('welcomeMsg').textContent = 'Hey ' + user.name.split(' ')[0] + '! 👋';
 
     if (['admin', 'superadmin'].includes(user.role)) {
@@ -110,6 +127,7 @@ async function refreshMaterials() {
 }
 
 function updateAccountSidebar() {
+    const user = DataStore.getCurrentUser();
     if (!user) return;
 
     const setText = (id, value) => {
@@ -120,11 +138,13 @@ function updateAccountSidebar() {
     const savedCount = DataStore.getFavorites().length;
     const role = user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Student';
 
-    setText('sidebarAvatar', user.name ? user.name[0].toUpperCase() : 'S');
+    renderAvatar(document.getElementById('sidebarAvatar'), user);
     setText('sidebarName', user.name);
     setText('sidebarRole', role);
     setText('sidebarRollNo', user.rollNo);
     setText('sidebarEnrollNo', user.enrollNo);
+    setText('sidebarInstitute', user.instituteName);
+    setText('sidebarTeacher', user.teacherName);
     setText('sidebarBranch', user.branch);
     setText('sidebarSemester', user.semester ? `Semester ${user.semester}` : '-');
     setText('sidebarStatus', user.approved === false ? 'Pending' : 'Approved');
@@ -137,6 +157,91 @@ function updateAccountSidebar() {
             avgEl.textContent = (s && s.averageRating) ? `${s.averageRating} ★ (${s.totalRatings})` : '-';
         }
     }).catch(() => {});
+}
+
+function refreshCurrentUserProfileUi() {
+    const updated = DataStore.getCurrentUser();
+    if (!updated) return;
+    renderAvatar(document.getElementById('userAvatar'), updated);
+    renderAvatar(document.getElementById('sidebarAvatar'), updated);
+    const userName = document.getElementById('userName');
+    if (userName) userName.textContent = updated.name || 'Student';
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    if (welcomeMsg && updated.name) welcomeMsg.textContent = 'Hey ' + updated.name.split(' ')[0] + '! 👋';
+    const welcomeMeta = document.getElementById('welcomeMeta');
+    if (welcomeMeta) {
+        const meta = [updated.instituteName, updated.teacherName ? `Teacher: ${updated.teacherName}` : ''].filter(Boolean);
+        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download study materials for your semester';
+    }
+    updateAccountSidebar();
+}
+
+function openEditProfileModal() {
+    const current = DataStore.getCurrentUser();
+    if (!current) return;
+    document.getElementById('profileName').value = current.name || '';
+    document.getElementById('profileBranch').value = current.branch || '';
+    document.getElementById('profileSemester').value = current.semester || '';
+    document.getElementById('profileImageFile').value = '';
+    const instituteField = document.getElementById('profileInstituteField');
+    const instituteInput = document.getElementById('profileInstituteName');
+    if (instituteField && instituteInput) {
+        const canEditInstitute = ['admin', 'superadmin'].includes(current.role);
+        instituteField.style.display = canEditInstitute ? 'block' : 'none';
+        instituteInput.value = current.instituteName || '';
+    }
+    document.getElementById('editProfileModal').style.display = 'flex';
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+}
+
+async function saveCurrentUserProfile(e) {
+    e.preventDefault();
+    const file = document.getElementById('profileImageFile').files[0];
+
+    try {
+        const current = DataStore.getCurrentUser();
+        const details = {
+            name: document.getElementById('profileName').value.trim(),
+            branch: document.getElementById('profileBranch').value.trim(),
+            semester: document.getElementById('profileSemester').value.trim()
+        };
+        if (['admin', 'superadmin'].includes(current?.role)) {
+            details.instituteName = document.getElementById('profileInstituteName').value.trim();
+        }
+
+        if (!details.name) {
+            showToast('Name is required', 'error');
+            return;
+        }
+
+        if (file && (!file.type || !file.type.startsWith('image/'))) {
+            showToast('Please select an image file', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('saveProfileBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        const res = await DataStore.updateProfile(details, file);
+        if (res.success) {
+            refreshCurrentUserProfileUi();
+            closeEditProfileModal();
+            showToast('Profile updated', 'success');
+        } else {
+            showToast(res.message || 'Profile update failed', 'error');
+        }
+    } catch (err) {
+        showToast('Profile update failed', 'error');
+    } finally {
+        const btn = document.getElementById('saveProfileBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+        }
+    }
 }
 
 function openAccountSidebar() {
@@ -330,7 +435,21 @@ document.getElementById('searchInput').addEventListener('input', renderMaterials
 document.getElementById('logoutBtn').addEventListener('click', () => { DataStore.logout(); window.location.href = 'index.html'; });
 
 document.getElementById('accountSidebarBtn')?.addEventListener('click', openAccountSidebar);
+document.getElementById('userAvatar')?.addEventListener('click', openAccountSidebar);
+document.getElementById('userAvatar')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openAccountSidebar();
+    }
+});
 document.getElementById('closeAccountSidebar')?.addEventListener('click', closeAccountSidebar);
+document.getElementById('editProfileBtn')?.addEventListener('click', openEditProfileModal);
+document.getElementById('closeEditProfileModal')?.addEventListener('click', closeEditProfileModal);
+document.getElementById('cancelEditProfileBtn')?.addEventListener('click', closeEditProfileModal);
+document.getElementById('editProfileForm')?.addEventListener('submit', saveCurrentUserProfile);
+document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'editProfileModal') closeEditProfileModal();
+});
 document.getElementById('accountSidebarOverlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'accountSidebarOverlay') closeAccountSidebar();
 });

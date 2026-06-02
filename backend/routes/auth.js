@@ -3,18 +3,21 @@ const router = express.Router();
 const User = require('../models/user');
 
 function safeUserPayload(user) {
+    const teacher = user.adminId && typeof user.adminId === 'object' ? user.adminId : null;
     return {
         id: user._id.toString(),
         name: user.name,
         phone: user.phone,
-        instituteName: user.instituteName,
+        instituteName: user.instituteName || (teacher ? teacher.instituteName : undefined),
+        teacherName: teacher ? teacher.name : undefined,
+        profileImageUrl: user.profileImageUrl,
         adminCode: user.adminCode,
         rollNo: user.rollNo,
         enrollNo: user.enrollNo,
         role: user.role,
         branch: user.branch,
         semester: user.semester,
-        adminId: user.adminId ? user.adminId.toString() : null,
+        adminId: user.adminId ? (teacher ? teacher._id.toString() : user.adminId.toString()) : null,
         approved: user.approved,
         plan: user.plan || 'free',
         aiQuestionsUsed: user.aiQuestionsUsed || 0
@@ -122,7 +125,7 @@ router.post('/login', async (req, res) => {
         if (isValidObjectId(adminId)) {
             studentQuery.adminId = adminId;
         }
-        const user = await User.findOne(studentQuery);
+        const user = await User.findOne(studentQuery).populate('adminId', 'name instituteName');
 
         if (!user) {
             return res.json({ success: false, message: 'Student not found.' });

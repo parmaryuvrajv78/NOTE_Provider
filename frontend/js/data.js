@@ -218,6 +218,26 @@ const DataStore = (() => {
         return await res.json();
     }
 
+    async function updateProfile(details, file) {
+        const formData = new FormData();
+        formData.append('userId', getCurrentUserId());
+        Object.entries(details || {}).forEach(([key, value]) => {
+            formData.append(key, value || '');
+        });
+        if (file) formData.append('profileImage', file);
+
+        const res = await fetch(`${API_BASE}/users/profile`, {
+            method: 'PUT',
+            body: formData
+        });
+        const data = await res.json().catch(() => ({
+            success: false,
+            message: res.ok ? 'Profile update failed' : `Profile update failed (${res.status})`
+        }));
+        if (data.success && data.user) setCurrentUser({ ...getCurrentUser(), ...data.user });
+        return data;
+    }
+
     // --- Favorites (Keep in LocalStorage per device) ---
     function getFavorites() {
         const user = getCurrentUser();
@@ -292,7 +312,7 @@ const DataStore = (() => {
         upgradeUser,
         getSuperAdminData, approveAdmin, rejectAdmin, removeAdmin,
         approveStudent, rejectStudent, removeStudent, upgradeStudent, deleteAnyMaterial,
-        getMaterials, uploadMaterial, deleteMaterial, getQuizScores, submitQuizScore,
+        getMaterials, uploadMaterial, deleteMaterial, getQuizScores, submitQuizScore, updateProfile,
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,

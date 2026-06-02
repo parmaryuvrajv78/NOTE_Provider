@@ -82,7 +82,11 @@ router.get('/data', async (req, res) => {
             .sort({ submittedAt: -1 });
 
         // format IDs for UI
-        const formatUsers = arr => arr.map(u => ({ ...u.toObject(), id: u._id.toString() }));
+        const formatUsers = arr => arr.map(u => ({
+            ...u.toObject(),
+            id: u._id.toString(),
+            instituteName: u.instituteName || admin.instituteName || ''
+        }));
         const formatMats = arr => arr.map(m => ({ ...m.toObject(), id: m._id.toString() }));
 
         res.json({

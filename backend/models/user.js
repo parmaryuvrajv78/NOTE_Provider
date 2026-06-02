@@ -4,6 +4,8 @@ const userSchema = new mongoose.Schema({
     name: String,
     phone: { type: String, index: true },
     instituteName: { type: String, index: true },
+    profileImageUrl: String,
+    profileImageName: String,
     adminCode: { type: String, uppercase: true, index: true },
     rollNo: { type: String, uppercase: true, index: true },
     enrollNo: { type: String, uppercase: true, index: true },
