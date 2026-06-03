@@ -69,6 +69,12 @@ function plusYears(date, years) {
     return next;
 }
 
+function plusDays(date, days) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+}
+
 function addCycles(date, intervalType, intervals, cycles) {
     const next = new Date(date);
     const total = Math.max(1, Number(intervals || 1)) * Math.max(1, Number(cycles || 1));
@@ -90,7 +96,8 @@ function buildSubscriptionPayload({ subscriptionId, user }) {
     const maxCycles = Number(process.env.SUBSCRIPTION_MAX_CYCLES || 12);
     const authAmount = Number(process.env.SUBSCRIPTION_AUTH_AMOUNT || 1);
     const planName = process.env.SUBSCRIPTION_PLAN_NAME || 'Xyron Notes Pro';
-    const firstCharge = new Date(Date.now() + 10 * 60 * 1000);
+    const firstChargeDelayDays = Number(process.env.SUBSCRIPTION_FIRST_CHARGE_DELAY_DAYS || 1);
+    const firstCharge = plusDays(new Date(), Math.max(1, firstChargeDelayDays));
     const returnUrl = `${getPublicBaseUrl()}/home.html?subscription_id=${encodeURIComponent(subscriptionId)}`;
 
     return {
