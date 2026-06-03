@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes — Subject Specific Logic
+   Xyron Notes — Subject Specific Logic
    ============================================ */
 
 (function () {

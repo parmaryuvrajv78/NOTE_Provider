@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes — Student Home Logic (Async)
+   Xyron Notes — Student Home Logic (Async)
    ============================================ */
 
 // Auth Guard

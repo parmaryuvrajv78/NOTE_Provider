@@ -1,4 +1,4 @@
-# Shniro Notes — Deployment Guide
+# Xyron Notes — Deployment Guide
 
 This project has been separated into **Frontend** and **Backend** for optimized deployment on Vercel and Render.
 
@@ -9,7 +9,7 @@ This project has been separated into **Frontend** and **Backend** for optimized 
 4.  **Build Command**: `npm install`
 5.  **Start Command**: `npm start`
 6.  **Environment Variables**: Add all variables from `backend/.env`.
-7.  Copy the generated URL (e.g., `https://shniro-notes.onrender.com`).
+7.  Copy the generated URL (e.g., `https://xyron-notes.onrender.com`).
 
 ## 🎨 Frontend Deployment (Vercel)
 1.  Go to [Vercel.com](https://vercel.com) and create a new **Project**.

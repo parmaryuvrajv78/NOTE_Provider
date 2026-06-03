@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes - Super Admin Dashboard Logic
+   Xyron Notes - Super Admin Dashboard Logic
    ============================================ */
 
 (function () {

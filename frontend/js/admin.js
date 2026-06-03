@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes — Admin Dashboard Logic (Async)
+   Xyron Notes — Admin Dashboard Logic (Async)
    ============================================ */
 
 // Auth Guard

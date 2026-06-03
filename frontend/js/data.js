@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes — API Client (Replacing Local DataStore)
+   Xyron Notes — API Client (Replacing Local DataStore)
    ============================================ */
 
 // Automatically switch between local development and production backend

@@ -1,5 +1,5 @@
 /* ============================================
-   Shniro Notes — Auth Logic (Async)
+   Xyron Notes — Auth Logic (Async)
    ============================================ */
 
 // --- Session check ---

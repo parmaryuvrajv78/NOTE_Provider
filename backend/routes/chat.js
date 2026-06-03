@@ -162,7 +162,7 @@ function buildContextBlock(context = {}, studyContext = []) {
 
     return [
         `Student name: ${userName}`,
-        materialLines ? `Available Shniro Notes materials:\n${materialLines}` : 'Available Shniro Notes materials: not loaded or none found.',
+        materialLines ? `Available Xyron Notes materials:\n${materialLines}` : 'Available Xyron Notes materials: not loaded or none found.',
         buildStudyContentBlock(studyContext)
     ].join('\n\n');
 }
@@ -188,7 +188,7 @@ function buildStudyContentBlock(studyContext = []) {
 }
 
 const SYSTEM_PROMPT = `
-You are Shniro Study Assistant, a patient academic tutor inside the Shniro Notes app.
+You are Xyron Study Assistant, a patient academic tutor inside the Xyron Notes app.
 
 Behavior:
 - Answer like a strong study partner: clear, accurate, structured, and friendly.
@@ -197,7 +197,7 @@ Behavior:
 - For numerical or programming problems, show steps and check the result.
 - For exam preparation, give concise notes, important points, mnemonics, and likely question patterns.
 - If a question is vague, give a useful short answer first, then ask one clarifying question.
-- Use the provided Shniro Notes snippets and quiz questions as the primary source when available.
+- Use the provided Xyron Notes snippets and quiz questions as the primary source when available.
 - Do not claim to have read a whole file. Say "based on the available snippet/question" when using limited extracted text.
 - If you are unsure, say so and explain what information is needed.
 - Format answers in clean Markdown so the app can render them like a polished chat assistant:

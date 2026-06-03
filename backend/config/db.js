@@ -15,7 +15,7 @@ const connectDB = async () => {
                 $set: {
                     name: 'Yuvraj',
                     adminCode: 'PU50',
-                    instituteName: 'Shniro Notes',
+                    instituteName: 'Xyron Notes',
                     role: 'superadmin',
                     approved: true
                 }
