@@ -98,7 +98,7 @@ function buildSubscriptionPayload({ subscriptionId, user }) {
     const planName = process.env.SUBSCRIPTION_PLAN_NAME || 'Xyron Notes Pro';
     const firstChargeDelayDays = Number(process.env.SUBSCRIPTION_FIRST_CHARGE_DELAY_DAYS || 1);
     const firstCharge = plusDays(new Date(), Math.max(1, firstChargeDelayDays));
-    const returnUrl = `${getPublicBaseUrl()}/home.html?subscription_id=${encodeURIComponent(subscriptionId)}`;
+    const returnUrl = `${getPublicBaseUrl()}/home.html?payment_return=cashfree&subscription_id=${encodeURIComponent(subscriptionId)}`;
 
     return {
         subscription_id: subscriptionId,

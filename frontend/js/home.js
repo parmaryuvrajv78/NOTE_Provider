@@ -9,6 +9,8 @@
 })();
 
 const user = DataStore.getCurrentUser();
+const PENDING_SUBSCRIPTION_KEY = 'xyron_pending_subscription_id';
+
 function renderAvatar(el, currentUser, fallback = 'S') {
     if (!el) return;
     const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
@@ -56,6 +58,47 @@ function showToast(msg, type = 'info') {
     toast.textContent = msg;
     box.appendChild(toast);
     setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3500);
+}
+
+function showPaymentStatusModal(title, message, type = 'info') {
+    let overlay = document.getElementById('paymentStatusOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'paymentStatusOverlay';
+        overlay.className = 'popup-overlay';
+        overlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.56); z-index:12000; align-items:center; justify-content:center; padding:18px;';
+
+        const card = document.createElement('div');
+        card.className = 'upgrade-modal-card';
+        card.style.cssText = 'background:var(--bg); color:var(--text); width:clamp(300px, 92vw, 460px); border-radius:12px; box-shadow:0 10px 34px rgba(0,0,0,0.32); padding:22px;';
+        card.innerHTML = `
+            <div id="paymentStatusIcon" style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px;background:var(--blue-light);color:var(--blue);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <h3 id="paymentStatusTitle" style="margin:0 0 8px;font-size:19px;">Payment</h3>
+            <p id="paymentStatusMessage" style="margin:0 0 18px;line-height:1.45;color:var(--text-gray);"></p>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" id="paymentStatusAccountBtn">View Plan</button>
+                <button type="button" class="btn btn-primary" id="paymentStatusCloseBtn">Done</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#paymentStatusCloseBtn').addEventListener('click', () => overlay.style.display = 'none');
+        overlay.querySelector('#paymentStatusAccountBtn').addEventListener('click', () => {
+            overlay.style.display = 'none';
+            openAccountSidebar();
+        });
+    }
+
+    const icon = overlay.querySelector('#paymentStatusIcon');
+    const color = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : 'var(--blue)';
+    if (icon) icon.style.color = color;
+    overlay.querySelector('#paymentStatusTitle').textContent = title;
+    overlay.querySelector('#paymentStatusMessage').textContent = message;
+    overlay.style.display = 'flex';
 }
 
 function formatPlanStatus(currentUser) {
@@ -530,6 +573,8 @@ async function startCashfreeSubscription() {
             return;
         }
 
+        localStorage.setItem(PENDING_SUBSCRIPTION_KEY, created.subscriptionId || '');
+
         if (!window.Cashfree) {
             showToast('Cashfree checkout could not load. Please check internet connection.', 'error');
             return;
@@ -552,26 +597,40 @@ async function startCashfreeSubscription() {
 
 async function handleSubscriptionReturn() {
     const params = new URLSearchParams(window.location.search);
-    const subscriptionId = params.get('subscription_id');
-    if (!subscriptionId) {
+    const current = DataStore.getCurrentUser();
+    const subscriptionId = params.get('subscription_id') ||
+        localStorage.getItem(PENDING_SUBSCRIPTION_KEY) ||
+        current?.cashfreeSubscriptionId ||
+        params.get('cf_subscription_id') ||
+        '';
+    const isPaymentReturn = params.has('payment_return') ||
+        params.has('subscription_id') ||
+        params.has('cf_subscription_id') ||
+        params.has('payment_status') ||
+        Boolean(localStorage.getItem(PENDING_SUBSCRIPTION_KEY));
+
+    if (!isPaymentReturn) {
         await refreshSubscriptionStatus();
         return;
     }
 
-    showToast('Verifying subscription...', 'info');
+    openAccountSidebar();
+    showPaymentStatusModal('Verifying Payment', 'Please wait while we confirm your Cashfree subscription.', 'info');
     try {
         const result = await DataStore.verifySubscription(subscriptionId);
         if (result.success && result.activated) {
+            localStorage.removeItem(PENDING_SUBSCRIPTION_KEY);
             refreshCurrentUserProfileUi();
-            showToast('Pro subscription activated', 'success');
+            showPaymentStatusModal('Pro Activated', 'Your subscription is confirmed. Downloads are now unlocked.', 'success');
         } else {
             await refreshSubscriptionStatus();
-            showToast('Payment is still pending. We will update it after Cashfree confirms.', 'info');
+            localStorage.removeItem(PENDING_SUBSCRIPTION_KEY);
+            showPaymentStatusModal('Payment Pending', 'Cashfree has not confirmed activation yet. Your plan will update automatically after confirmation.', 'info');
         }
     } catch (err) {
-        showToast('Could not verify subscription yet', 'error');
+        showPaymentStatusModal('Verification Failed', 'We could not verify the payment right now. Open Account later or try again after a few minutes.', 'error');
     } finally {
-        params.delete('subscription_id');
+        ['payment_return', 'subscription_id', 'cf_subscription_id', 'payment_status'].forEach(key => params.delete(key));
         const cleanQuery = params.toString();
         window.history.replaceState({}, document.title, cleanQuery ? `home.html?${cleanQuery}` : 'home.html');
     }
