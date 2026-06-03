@@ -16,6 +16,9 @@ const userSchema = new mongoose.Schema({
     approved: { type: Boolean, default: false },
     // Billing / plan: 'free' users cannot download materials.
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+    planStatus: { type: String, enum: ['inactive', 'pending', 'active', 'cancelled', 'expired'], default: 'inactive' },
+    planExpiresAt: Date,
+    cashfreeSubscriptionId: String,
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Material' }],
     createdAt: { type: Date, default: Date.now }
 });

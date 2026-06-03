@@ -58,6 +58,22 @@ function showToast(msg, type = 'info') {
     setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
+function formatPlanStatus(currentUser) {
+    if (!currentUser) return 'Free';
+    if (['admin', 'superadmin'].includes(currentUser.role)) return 'Included';
+    if (currentUser.plan === 'pro') return 'Pro Active';
+    if (currentUser.planStatus === 'pending') return 'Payment Pending';
+    if (currentUser.planStatus === 'expired') return 'Expired';
+    return 'Free';
+}
+
+function hasActiveProPlan(currentUser) {
+    if (!currentUser) return false;
+    if (['admin', 'superadmin'].includes(currentUser.role)) return true;
+    if (currentUser.plan !== 'pro') return false;
+    return !currentUser.planExpiresAt || new Date(currentUser.planExpiresAt) > new Date();
+}
+
 // Show upgrade modal (used when download or AI quota is blocked)
 function showUpgradeModal(title, message) {
     let overlay = document.getElementById('upgradeModalOverlay');
@@ -170,6 +186,7 @@ function updateAccountSidebar() {
     setText('sidebarBranch', user.branch);
     setText('sidebarSemester', user.semester ? `Semester ${user.semester}` : '-');
     setText('sidebarStatus', user.approved === false ? 'Pending' : 'Approved');
+    setText('sidebarPlanStatus', formatPlanStatus(user));
     setText('sidebarMaterialCount', String(allMaterials.length || 0));
     setText('sidebarSavedCount', String(savedCount || 0));
     // Update average rating display
@@ -179,6 +196,18 @@ function updateAccountSidebar() {
             avgEl.textContent = (s && s.averageRating) ? `${s.averageRating} ★ (${s.totalRatings})` : '-';
         }
     }).catch(() => {});
+}
+
+async function refreshSubscriptionStatus() {
+    const current = DataStore.getCurrentUser();
+    if (!current || current.role !== 'student') return null;
+    try {
+        const status = await DataStore.getSubscriptionStatus();
+        refreshCurrentUserProfileUi();
+        return status;
+    } catch (err) {
+        return null;
+    }
 }
 
 function refreshCurrentUserProfileUi() {
@@ -435,7 +464,7 @@ function openMatModal(id) {
     const currentUser = DataStore.getCurrentUser();
     document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, currentUser && currentUser.id);
     const downloadBtn = document.getElementById('modalDownload');
-    const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
+    const canDownload = hasActiveProPlan(currentUser);
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {
@@ -475,9 +504,80 @@ document.getElementById('editProfileModal')?.addEventListener('click', (e) => {
 document.getElementById('accountSidebarOverlay')?.addEventListener('click', (e) => {
     if (e.target.id === 'accountSidebarOverlay') closeAccountSidebar();
 });
-document.getElementById('upgradePlanBtn')?.addEventListener('click', () => {
-    showToast('Upgrade request feature is coming soon', 'info');
-});
+async function startCashfreeSubscription() {
+    const btn = document.getElementById('upgradePlanBtn');
+    const current = DataStore.getCurrentUser();
+    if (!current || current.role !== 'student') {
+        showToast('Only student accounts need a Pro subscription', 'info');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Starting...';
+    }
+
+    try {
+        const created = await DataStore.createSubscription();
+        if (!created.success) {
+            showToast(created.message || 'Could not start payment', 'error');
+            return;
+        }
+
+        if (created.alreadyActive) {
+            await refreshSubscriptionStatus();
+            showToast('Your Pro plan is already active', 'success');
+            return;
+        }
+
+        if (!window.Cashfree) {
+            showToast('Cashfree checkout could not load. Please check internet connection.', 'error');
+            return;
+        }
+
+        const cashfree = Cashfree({ mode: created.mode || 'sandbox' });
+        await cashfree.subscriptionsCheckout({
+            subsSessionId: created.subscriptionSessionId,
+            redirectTarget: '_self'
+        });
+    } catch (err) {
+        showToast('Payment could not be started', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Upgrade with Cashfree';
+        }
+    }
+}
+
+async function handleSubscriptionReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const subscriptionId = params.get('subscription_id');
+    if (!subscriptionId) {
+        await refreshSubscriptionStatus();
+        return;
+    }
+
+    showToast('Verifying subscription...', 'info');
+    try {
+        const result = await DataStore.verifySubscription(subscriptionId);
+        if (result.success && result.activated) {
+            refreshCurrentUserProfileUi();
+            showToast('Pro subscription activated', 'success');
+        } else {
+            await refreshSubscriptionStatus();
+            showToast('Payment is still pending. We will update it after Cashfree confirms.', 'info');
+        }
+    } catch (err) {
+        showToast('Could not verify subscription yet', 'error');
+    } finally {
+        params.delete('subscription_id');
+        const cleanQuery = params.toString();
+        window.history.replaceState({}, document.title, cleanQuery ? `home.html?${cleanQuery}` : 'home.html');
+    }
+}
+
+document.getElementById('upgradePlanBtn')?.addEventListener('click', startCashfreeSubscription);
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAccountSidebar();
 });
@@ -570,4 +670,5 @@ document.getElementById('submitRatingBtn')?.addEventListener('click', async () =
     }
 });
 
+handleSubscriptionReturn();
 refreshMaterials();

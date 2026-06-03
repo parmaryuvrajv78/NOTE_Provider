@@ -40,6 +40,13 @@ function showToast(msg, type = 'info') {
     setTimeout(() => { toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
+function hasActiveProPlan(currentUser) {
+    if (!currentUser) return false;
+    if (['admin', 'superadmin'].includes(currentUser.role)) return true;
+    if (currentUser.plan !== 'pro') return false;
+    return !currentUser.planExpiresAt || new Date(currentUser.planExpiresAt) > new Date();
+}
+
 // Upgrade modal for subject page (redirects to home if account sidebar not available)
 function showUpgradeModal(title, message) {
     let overlay = document.getElementById('upgradeModalOverlay');
@@ -382,7 +389,7 @@ function openMatModal(id) {
     document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, user && user.id);
     const downloadBtn = document.getElementById('modalDownload');
     const currentUser = DataStore.getCurrentUser();
-    const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
+    const canDownload = hasActiveProPlan(currentUser);
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {

@@ -1,0 +1,8 @@
+{
+  "appId": "com.xyron.notes",
+  "appName": "Xyron Notes",
+  "webDir": "frontend",
+  "server": {
+    "androidScheme": "https"
+  }
+}

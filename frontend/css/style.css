@@ -116,9 +116,22 @@ body.dark .auth-bg {
 }
 
 .brand-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     font-size: 26px;
     font-weight: 800;
     color: var(--text);
+    line-height: 1.15;
+}
+
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex: 0 0 32px;
+    object-fit: cover;
+    display: block;
 }
 
 .brand-title .blue {
@@ -567,6 +580,15 @@ body.dark .navbar {
     font-size: 17px;
     font-weight: 700;
     color: var(--text);
+}
+
+.nav-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    flex: 0 0 28px;
+    object-fit: cover;
+    display: block;
 }
 
 .nav-brand .blue { color: var(--blue); }
@@ -3391,5 +3413,191 @@ textarea.input-box:focus {
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
         transition-duration: 0.001ms !important;
+    }
+}
+
+/* ===== CAPACITOR ANDROID APP POLISH ===== */
+:root {
+    --app-viewport-height: 100dvh;
+    --android-nav-height: 72px;
+}
+
+html.native-android-app {
+    height: var(--app-viewport-height);
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+body.native-android-app {
+    height: var(--app-viewport-height);
+    min-height: var(--app-viewport-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-font-smoothing: antialiased;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+.native-android-app .navbar {
+    top: 0;
+    min-height: calc(60px + var(--safe-top));
+    padding: var(--safe-top) max(14px, var(--safe-right)) 0 max(14px, var(--safe-left));
+    border-radius: 0;
+    box-shadow: 0 6px 18px rgba(8, 25, 42, 0.08);
+}
+
+.native-android-app .main-content {
+    width: 100%;
+    max-width: 720px;
+    padding: 14px max(12px, var(--safe-right)) calc(var(--android-nav-height) + var(--safe-bottom) + 18px) max(12px, var(--safe-left));
+}
+
+.native-android-app .bottom-nav {
+    display: flex;
+    min-height: calc(var(--android-nav-height) + var(--safe-bottom));
+    padding: 6px max(8px, var(--safe-right)) calc(6px + var(--safe-bottom)) max(8px, var(--safe-left));
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 28px rgba(8, 25, 42, 0.12);
+}
+
+.native-android-app .nav-item {
+    min-height: 56px;
+    border-radius: 16px;
+    justify-content: center;
+}
+
+.native-android-app .nav-item.active {
+    background: var(--blue-light);
+}
+
+.native-android-app.dark .nav-item.active,
+body.dark.native-android-app .nav-item.active {
+    background: rgba(41, 121, 255, 0.14);
+}
+
+.native-android-app .fab {
+    right: max(16px, var(--safe-right));
+    bottom: calc(var(--android-nav-height) + var(--safe-bottom) + 18px);
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 10px 26px rgba(41, 121, 255, 0.32);
+}
+
+.native-android-app .welcome-card,
+.native-android-app .section-card,
+.native-android-app .stat-box,
+.native-android-app .mat-card,
+.native-android-app .user-row {
+    border-radius: 16px;
+    box-shadow: 0 8px 26px rgba(8, 25, 42, 0.06);
+}
+
+.native-android-app .material-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.native-android-app .mat-card {
+    padding: 16px;
+}
+
+.native-android-app .btn,
+.native-android-app .btn-logout,
+.native-android-app .btn-account,
+.native-android-app .btn-icon-tile,
+.native-android-app button,
+.native-android-app .tab-btn,
+.native-android-app .subject-back-btn {
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.native-android-app input,
+.native-android-app select,
+.native-android-app textarea,
+.native-android-app .input-box,
+.native-android-app input.input-box,
+.native-android-app select.input-box,
+.native-android-app textarea.input-box {
+    font-size: 16px;
+}
+
+.native-android-app .popup-overlay,
+.native-android-app .video-overlay,
+.native-android-app .quiz-overlay {
+    padding: calc(10px + var(--safe-top)) max(10px, var(--safe-right)) calc(10px + var(--safe-bottom)) max(10px, var(--safe-left));
+}
+
+.native-android-app .mat-modal-card,
+.native-android-app #editProfileModal .mat-modal-card {
+    width: 100%;
+    max-height: calc(var(--app-viewport-height) - var(--safe-top) - var(--safe-bottom) - 20px);
+    border-radius: 18px;
+    padding: 18px;
+}
+
+.native-android-app .account-sidebar {
+    width: min(92vw, 380px);
+    height: var(--app-viewport-height);
+    padding: calc(18px + var(--safe-top)) 18px calc(18px + var(--safe-bottom));
+}
+
+body.native-android-app.auth-body {
+    min-height: var(--app-viewport-height);
+    padding-bottom: 0;
+}
+
+.native-android-app .auth-container {
+    min-height: var(--app-viewport-height);
+    padding: calc(12px + var(--safe-top)) 12px calc(16px + var(--safe-bottom));
+}
+
+.native-android-app .auth-card {
+    width: min(100%, 400px);
+    max-height: calc(var(--app-viewport-height) - var(--safe-top) - var(--safe-bottom) - 24px);
+    overflow-y: auto;
+    border-radius: 20px;
+}
+
+.native-android-app .toast-container {
+    top: calc(14px + var(--safe-top));
+    right: max(12px, var(--safe-right));
+    left: max(12px, var(--safe-left));
+}
+
+.native-android-app .toast {
+    width: 100%;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .native-android-app .btn:hover,
+    .native-android-app .btn-logout:hover,
+    .native-android-app .btn-account:hover,
+    .native-android-app .btn-icon-tile:hover,
+    .native-android-app .nav-item:hover,
+    .native-android-app .fab:hover,
+    .native-android-app .fav-btn:hover,
+    .native-android-app .mat-card:hover {
+        transform: none;
+    }
+
+    .native-android-app .mat-card:hover {
+        border-color: var(--input-border);
+        box-shadow: 0 8px 26px rgba(8, 25, 42, 0.06);
+    }
+}
+
+@media (max-width: 380px) {
+    .native-android-app .main-content {
+        padding-left: max(10px, var(--safe-left));
+        padding-right: max(10px, var(--safe-right));
+    }
+
+    .native-android-app .nav-item span {
+        font-size: 10px;
     }
 }

@@ -19,11 +19,11 @@
     <header class="app-header">
         <nav class="navbar">
             <div class="nav-brand">
-                <img src="icon.png" alt="Logo" style="width: 28px; height: 28px; border-radius: 6px; margin-right: 10px;">
+                <img src="icon.png" alt="Logo" class="nav-logo">
                 Xyron <span class="blue">Notes</span>
             </div>
             <div class="nav-brand-mobile" style="display: none;">
-                <img src="icon.png" alt="Logo" style="width: 24px; height: 24px; border-radius: 6px; margin-right: 8px;">
+                <img src="icon.png" alt="Logo" class="nav-logo">
                 Xyron <span class="blue">Notes</span>
             </div>
             <div class="nav-right">
@@ -176,6 +176,7 @@
                     <div class="account-data-row"><span>Branch</span><strong id="sidebarBranch">-</strong></div>
                     <div class="account-data-row"><span>Semester</span><strong id="sidebarSemester">-</strong></div>
                     <div class="account-data-row"><span>Status</span><strong id="sidebarStatus">Approved</strong></div>
+                    <div class="account-data-row"><span>Plan</span><strong id="sidebarPlanStatus">Free</strong></div>
                 </div>
             </div>
 
@@ -213,7 +214,7 @@
                     <li><svg viewBox="0 0 12 12"><path d="M10 3 4.8 8.2 2 5.4"/></svg><span>Extra saved material capacity</span></li>
                     <li><svg viewBox="0 0 12 12"><path d="M10 3 4.8 8.2 2 5.4"/></svg><span>Early access to new tools</span></li>
                 </ul>
-                <button type="button" class="btn btn-primary" id="upgradePlanBtn">Request Upgrade</button>
+                <button type="button" class="btn btn-primary" id="upgradePlanBtn">Upgrade with Cashfree</button>
             </div>
         </aside>
     </div>
@@ -267,6 +268,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
     </button>
 
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script src="js/data.js"></script>
     <script src="js/home.js"></script>
 </body>

@@ -14,6 +14,7 @@ const materialRoutes = require('./routes/materials');
 const userRoutes = require('./routes/users');
 const systemRoutes = require('./routes/system');
 const ratingRoutes = require('./routes/ratings');
+const subscriptionRoutes = require('./routes/subscriptions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,13 +22,23 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
+const nativeAppOrigins = [
+    'https://localhost',
+    'capacitor://localhost',
+    'ionic://localhost'
+];
+const corsAllowedOrigins = [...new Set([...allowedOrigins, ...nativeAppOrigins])];
 const cspConnectSources = [
     "'self'",
     process.env.BASE_URL || 'http://localhost:3000',
-    ...allowedOrigins,
+    ...corsAllowedOrigins,
     'https://note-provider-nd4p.onrender.com',
     'https://*.supabase.co',
-    'https://*.supabase.in'
+    'https://*.supabase.in',
+    'https://api.cashfree.com',
+    'https://sandbox.cashfree.com',
+    'https://payments.cashfree.com',
+    'https://payments-test.cashfree.com'
 ].filter(Boolean);
 
 // Connect to Database
@@ -50,12 +61,12 @@ app.use((req, res, next) => {
             "base-uri 'self'",
             "frame-ancestors 'none'",
             "object-src 'none'",
-            "script-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' https://sdk.cashfree.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
             `connect-src ${cspConnectSources.join(' ')}`,
-            "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
+            "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://sdk.cashfree.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com https://payments-test.cashfree.com",
             "media-src 'self' data: blob: https:"
         ].join('; ')
     );
@@ -63,7 +74,7 @@ app.use((req, res, next) => {
 });
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.length === 0 || corsAllowedOrigins.includes(origin)) {
             return callback(null, true);
         }
         return callback(new Error('Not allowed by CORS'));
@@ -71,7 +82,11 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString('utf8');
+    }
+}));
 
 // Request Logger
 app.use((req, res, next) => {
@@ -92,6 +107,7 @@ app.use('/api/materials', materialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/ratings', ratingRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });

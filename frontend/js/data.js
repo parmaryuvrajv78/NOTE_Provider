@@ -3,16 +3,35 @@
    ============================================ */
 
 // Automatically switch between local development and production backend
-const IS_LOCAL = window.location.hostname === 'localhost' || 
-                 window.location.hostname === '127.0.0.1' || 
-                 window.location.hostname === '' || 
-                 window.location.protocol === 'file:';
+const IS_LOCAL = window.location.protocol === 'http:' &&
+                 (window.location.hostname === 'localhost' ||
+                  window.location.hostname === '127.0.0.1' ||
+                  window.location.hostname === '');
 
 window.API_BASE = IS_LOCAL
     ? 'http://localhost:3000/api'
     : 'https://note-provider-nd4p.onrender.com/api'; 
 
 const API_BASE = window.API_BASE;
+
+const IS_NATIVE_ANDROID_APP = window.location.protocol === 'https:' &&
+                              window.location.hostname === 'localhost';
+
+if (IS_NATIVE_ANDROID_APP) {
+    document.documentElement.classList.add('native-android-app');
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('native-android-app');
+    });
+}
+
+function syncViewportHeight() {
+    const height = window.visualViewport?.height || window.innerHeight;
+    document.documentElement.style.setProperty('--app-viewport-height', `${height}px`);
+}
+
+syncViewportHeight();
+window.visualViewport?.addEventListener('resize', syncViewportHeight);
+window.addEventListener('orientationchange', syncViewportHeight);
 
 const DataStore = (() => {
     // Session remains in local storage for persistence across tabs
@@ -238,6 +257,48 @@ const DataStore = (() => {
         return data;
     }
 
+    async function getSubscriptionConfig() {
+        const res = await fetch(`${API_BASE}/subscriptions/config`);
+        return await res.json();
+    }
+
+    async function getSubscriptionStatus() {
+        const res = await fetch(appendQuery(`${API_BASE}/subscriptions/status`, { userId: getCurrentUserId() }));
+        const data = await res.json();
+        if (data.success) {
+            setCurrentUser({
+                ...getCurrentUser(),
+                plan: data.plan,
+                planStatus: data.planStatus,
+                planExpiresAt: data.planExpiresAt,
+                cashfreeSubscriptionId: data.cashfreeSubscriptionId
+            });
+        }
+        return data;
+    }
+
+    async function createSubscription() {
+        const res = await fetch(`${API_BASE}/subscriptions/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getCurrentUserId() })
+        });
+        return await res.json();
+    }
+
+    async function verifySubscription(subscriptionId = '') {
+        const res = await fetch(`${API_BASE}/subscriptions/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getCurrentUserId(), subscriptionId })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+            setCurrentUser({ ...getCurrentUser(), ...data.user });
+        }
+        return data;
+    }
+
     // --- Favorites (Keep in LocalStorage per device) ---
     function getFavorites() {
         const user = getCurrentUser();
@@ -316,6 +377,7 @@ const DataStore = (() => {
         getFavorites, toggleFavorite, isFavorite,
         submitRating, getUserRating, getRatingStats,
         getSystemStatus,
+        getSubscriptionConfig, getSubscriptionStatus, createSubscription, verifySubscription,
         setCurrentUser, getCurrentUser, logout, isLoggedIn, isAdmin, isSuperAdmin,
     };
 })();

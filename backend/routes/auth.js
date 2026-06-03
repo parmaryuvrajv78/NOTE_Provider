@@ -20,7 +20,10 @@ function safeUserPayload(user) {
         semester: user.semester,
         adminId: user.adminId ? (teacher ? teacher._id.toString() : user.adminId.toString()) : null,
         approved: user.approved,
-        plan: user.plan || 'free'
+        plan: user.plan || 'free',
+        planStatus: user.planStatus || (user.plan === 'pro' ? 'active' : 'inactive'),
+        planExpiresAt: user.planExpiresAt || null,
+        cashfreeSubscriptionId: user.cashfreeSubscriptionId || null
     };
 }
 

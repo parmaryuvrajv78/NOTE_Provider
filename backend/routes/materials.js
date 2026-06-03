@@ -433,8 +433,16 @@ router.get('/download/:id', async (req, res) => {
         const user = await User.findById(userId);
         if (!user) return res.status(403).json({ success: false, message: 'User not found' });
 
-        // Allow admins or pro plan users to download
-        if (!['admin', 'superadmin'].includes(user.role) && user.plan !== 'pro') {
+        const hasActivePlan = user.plan === 'pro' && (!user.planExpiresAt || user.planExpiresAt > new Date());
+
+        if (user.plan === 'pro' && user.planExpiresAt && user.planExpiresAt <= new Date()) {
+            user.plan = 'free';
+            user.planStatus = 'expired';
+            await user.save();
+        }
+
+        // Allow admins or active pro plan users to download
+        if (!['admin', 'superadmin'].includes(user.role) && !hasActivePlan) {
             return res.status(403).json({ success: false, message: 'Download is available only for upgraded users. Please upgrade your plan.' });
         }
 
