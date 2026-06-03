@@ -16,6 +16,11 @@ function getPublicBaseUrl() {
     return (process.env.PUBLIC_APP_URL || process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 }
 
+function getSubscriptionReturnUrl() {
+    return process.env.CASHFREE_RETURN_URL ||
+        `${getPublicBaseUrl()}/home.html?payment_return=cashfree`;
+}
+
 function requireCredentials() {
     const clientId = process.env.CASHFREE_APP_ID || process.env.CASHFREE_CLIENT_ID;
     const clientSecret = process.env.CASHFREE_SECRET_KEY || process.env.CASHFREE_CLIENT_SECRET;
@@ -98,7 +103,7 @@ function buildSubscriptionPayload({ subscriptionId, user }) {
     const planName = process.env.SUBSCRIPTION_PLAN_NAME || 'Xyron Notes Pro';
     const firstChargeDelayDays = Number(process.env.SUBSCRIPTION_FIRST_CHARGE_DELAY_DAYS || 1);
     const firstCharge = plusDays(new Date(), Math.max(1, firstChargeDelayDays));
-    const returnUrl = `${getPublicBaseUrl()}/home.html?payment_return=cashfree&subscription_id=${encodeURIComponent(subscriptionId)}`;
+    const returnUrl = getSubscriptionReturnUrl();
 
     return {
         subscription_id: subscriptionId,
