@@ -13,7 +13,6 @@ const superAdminRoutes = require('./routes/superadmin');
 const materialRoutes = require('./routes/materials');
 const userRoutes = require('./routes/users');
 const systemRoutes = require('./routes/system');
-const chatRoutes = require('./routes/chat');
 const ratingRoutes = require('./routes/ratings');
 
 const app = express();
@@ -22,6 +21,14 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
+const cspConnectSources = [
+    "'self'",
+    process.env.BASE_URL || 'http://localhost:3000',
+    ...allowedOrigins,
+    'https://note-provider-nd4p.onrender.com',
+    'https://*.supabase.co',
+    'https://*.supabase.in'
+].filter(Boolean);
 
 // Connect to Database
 connectDB();
@@ -33,6 +40,9 @@ app.use((req, res, next) => {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     res.setHeader(
         'Content-Security-Policy',
         [
@@ -44,7 +54,7 @@ app.use((req, res, next) => {
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' http://localhost:3000 https://note-provider-nd4p.onrender.com https://*.supabase.co https://*.supabase.in",
+            `connect-src ${cspConnectSources.join(' ')}`,
             "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
             "media-src 'self' data: blob: https:"
         ].join('; ')
@@ -81,7 +91,6 @@ app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/system', systemRoutes);
-app.use('/api/chat', chatRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.get('/health', (req, res) => {
     res.status(200).send('OK');

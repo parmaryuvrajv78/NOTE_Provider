@@ -21,8 +21,7 @@ function serializeUser(user) {
         semester: user.semester,
         adminId: user.adminId ? (teacher ? teacher._id.toString() : user.adminId.toString()) : null,
         approved: user.approved,
-        plan: user.plan || 'free',
-        aiQuestionsUsed: user.aiQuestionsUsed || 0
+        plan: user.plan || 'free'
     };
 }
 

@@ -174,8 +174,6 @@ router.post('/upgrade', async (req, res) => {
 
         user.plan = 'pro';
         if (!user.adminId) user.adminId = admin._id;
-        user.aiQuestionsUsed = 0;
-        user.aiLastReset = new Date();
         await user.save();
 
         res.json({ success: true, user: { ...user.toObject(), id: user._id.toString() } });

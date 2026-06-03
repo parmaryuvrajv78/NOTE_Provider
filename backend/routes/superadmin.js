@@ -149,8 +149,6 @@ router.post('/upgrade-student', async (req, res) => {
         if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
         student.plan = 'pro';
-        student.aiQuestionsUsed = 0;
-        student.aiLastReset = new Date();
         await student.save();
 
         res.json({ success: true, student: serializeUser(student) });

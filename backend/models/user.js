@@ -14,11 +14,8 @@ const userSchema = new mongoose.Schema({
     adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, default: null },
     role: { type: String, enum: ['student', 'admin', 'superadmin'], default: 'student' },
     approved: { type: Boolean, default: false },
-    // Billing / plan: 'free' users have limited AI queries and cannot download materials
+    // Billing / plan: 'free' users cannot download materials.
     plan: { type: String, enum: ['free', 'pro'], default: 'free' },
-    // AI usage tracking: resets daily (server enforces reset based on aiLastReset)
-    aiQuestionsUsed: { type: Number, default: 0 },
-    aiLastReset: { type: Date, default: new Date(0) },
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Material' }],
     createdAt: { type: Date, default: Date.now }
 });
