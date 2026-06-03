@@ -27,9 +27,8 @@ const subscriptionSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-subscriptionSchema.pre('save', function setUpdatedAt(next) {
+subscriptionSchema.pre('save', function setUpdatedAt() {
     this.updatedAt = new Date();
-    next();
 });
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);
