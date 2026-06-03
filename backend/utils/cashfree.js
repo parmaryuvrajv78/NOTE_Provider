@@ -16,9 +16,20 @@ function getPublicBaseUrl() {
     return (process.env.PUBLIC_APP_URL || process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 }
 
+function stripPaymentReturnParams(returnUrl) {
+    try {
+        const url = new URL(returnUrl);
+        ['payment_return', 'subscription_id', 'cf_subscription_id', 'payment_status'].forEach(key => url.searchParams.delete(key));
+        return url.toString();
+    } catch (err) {
+        return returnUrl;
+    }
+}
+
 function getSubscriptionReturnUrl() {
-    return process.env.CASHFREE_RETURN_URL ||
-        `${getPublicBaseUrl()}/home.html?payment_return=cashfree`;
+    const returnUrl = process.env.CASHFREE_RETURN_URL ||
+        `${getPublicBaseUrl()}/home.html`;
+    return stripPaymentReturnParams(returnUrl);
 }
 
 function requireCredentials() {
