@@ -19,6 +19,18 @@ function esc(str) {
     return d.innerHTML;
 }
 
+function attr(str) {
+    return esc(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function jsArg(value) {
+    return attr(JSON.stringify(String(value || '')));
+}
+
+function apiMaterialUrl(action, materialId, userId) {
+    return `${API_BASE}/materials/${action}/${encodeURIComponent(materialId)}?userId=${encodeURIComponent(userId || '')}`;
+}
+
 function showToast(msg, type = 'info') {
     const box = document.getElementById('toastBox');
     const toast = document.createElement('div');
@@ -126,11 +138,11 @@ function createCard(m) {
                 <span class="mat-subject">${esc(m.subject)}</span>
                 ${scoreText}
             </div>
-            <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${m.id || m._id}')">
+            <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav(event, ${jsArg(m.id || m._id)})">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </button>
         </div>
-        <div onclick="openMatModal('${m.id || m._id}')" style="margin-top: 14px; cursor:pointer;">
+        <div onclick="openMatModal(${jsArg(m.id || m._id)})" style="margin-top: 14px; cursor:pointer;">
             <div class="mat-footer" style="padding-top: 10px; border-top: 1px solid var(--input-border);">
                 <span style="font-weight: 500; color: var(--blue);">View Material</span>
                 <span style="font-weight: 600;">${esc(m.size)}</span>
@@ -353,7 +365,7 @@ function openMatModal(id) {
             return;
         }
         // For stored files, point player to server view endpoint which proxies the file
-        m.fileUrl = `${API_BASE}/materials/view/${m.id || m._id}?userId=${user && user.id}`;
+        m.fileUrl = apiMaterialUrl('view', m.id || m._id, user && user.id);
         openVideoModal(m);
         return;
     }
@@ -367,14 +379,14 @@ function openMatModal(id) {
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
-    document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}?userId=${user && user.id}`;
+    document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, user && user.id);
     const downloadBtn = document.getElementById('modalDownload');
     const currentUser = DataStore.getCurrentUser();
     const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {
-            window.location.href = `${API_BASE}/materials/download/${m.id || m._id}?userId=${currentUser.id}`;
+            window.location.href = apiMaterialUrl('download', m.id || m._id, currentUser.id);
             showToast('Download started!', 'success');
         };
     } else {

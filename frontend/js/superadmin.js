@@ -14,8 +14,12 @@ const currentSuperAdmin = DataStore.getCurrentUser();
 function renderAvatar(el, currentUser, fallback = 'S') {
     if (!el) return;
     const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
+    el.textContent = '';
     if (currentUser && currentUser.profileImageUrl) {
-        el.innerHTML = `<img src="${esc(currentUser.profileImageUrl)}" alt="${esc(currentUser.name || 'Profile')}">`;
+        const img = document.createElement('img');
+        img.src = safeAssetUrl(currentUser.profileImageUrl);
+        img.alt = currentUser.name || 'Profile';
+        el.appendChild(img);
         el.classList.add('has-image');
     } else {
         el.textContent = initial;
@@ -45,6 +49,24 @@ function esc(str) {
     const d = document.createElement('div');
     d.textContent = String(str);
     return d.innerHTML;
+}
+
+function attr(str) {
+    return esc(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function jsArg(value) {
+    return attr(JSON.stringify(String(value || '')));
+}
+
+function safeAssetUrl(value) {
+    const raw = String(value || '').trim();
+    if (/^https?:\/\//i.test(raw) || /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(raw)) return raw;
+    return '';
+}
+
+function apiMaterialUrl(action, materialId, userId) {
+    return `${API_BASE}/materials/${action}/${encodeURIComponent(materialId)}?userId=${encodeURIComponent(userId || '')}`;
 }
 
 function refreshCurrentUserProfileUi() {
@@ -163,8 +185,8 @@ function renderPendingAdmins(admins) {
                 </div>
             </div>
             <div class="user-actions">
-                <button class="btn btn-primary btn-sm" onclick="approveAdmin('${admin.id}')">Approve</button>
-                <button class="btn btn-ghost btn-sm" onclick="rejectAdmin('${admin.id}')" style="color:var(--error)">Reject</button>
+                <button class="btn btn-primary btn-sm" onclick="approveAdmin(${jsArg(admin.id)})">Approve</button>
+                <button class="btn btn-ghost btn-sm" onclick="rejectAdmin(${jsArg(admin.id)})" style="color:var(--error)">Reject</button>
             </div>
         `;
         list.appendChild(row);
@@ -190,7 +212,7 @@ function renderAdmins(admins) {
                 </div>
             </div>
             <div class="user-actions">
-                <button class="btn btn-ghost btn-sm" onclick="removeAdmin('${admin.id}')" style="color:var(--error)">Remove</button>
+                <button class="btn btn-ghost btn-sm" onclick="removeAdmin(${jsArg(admin.id)})" style="color:var(--error)">Remove</button>
             </div>
         `;
         list.appendChild(row);
@@ -216,8 +238,8 @@ function renderStudents(pending, students) {
                 </div>
             </div>
             <div class="user-actions">
-                <button class="btn btn-primary btn-sm" onclick="approveStudent('${student.id}')">Approve</button>
-                <button class="btn btn-ghost btn-sm" onclick="rejectStudent('${student.id}')" style="color:var(--error)">Reject</button>
+                <button class="btn btn-primary btn-sm" onclick="approveStudent(${jsArg(student.id)})">Approve</button>
+                <button class="btn btn-ghost btn-sm" onclick="rejectStudent(${jsArg(student.id)})" style="color:var(--error)">Reject</button>
             </div>
         `;
         pendingList.appendChild(row);
@@ -235,8 +257,8 @@ function renderStudents(pending, students) {
                 </div>
             </div>
             <div class="user-actions">
-                ${student.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeStudent('${student.id}')">Upgrade</button>`}
-                <button class="btn btn-ghost btn-sm" onclick="removeStudent('${student.id}')" style="color:var(--error)">Remove</button>
+                ${student.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeStudent(${jsArg(student.id)})">Upgrade</button>`}
+                <button class="btn btn-ghost btn-sm" onclick="removeStudent(${jsArg(student.id)})" style="color:var(--error)">Remove</button>
             </div>
         `;
         list.appendChild(row);
@@ -271,10 +293,10 @@ function renderMaterials(materials) {
                 </div>
             </div>
             <div class="user-actions">
-                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/view/${mat.id}?userId=${currentSuperAdmin.id}\`" title="View" style="color:var(--blue); background:var(--blue-light);">
+                <button class="btn-icon-tile" onclick="window.location.href = apiMaterialUrl('view', ${jsArg(mat.id)}, currentSuperAdmin.id)" title="View" style="color:var(--blue); background:var(--blue-light);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button class="btn-icon-tile" onclick="deleteMat('${mat.id}')" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
+                <button class="btn-icon-tile" onclick="deleteMat(${jsArg(mat.id)})" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
             </div>

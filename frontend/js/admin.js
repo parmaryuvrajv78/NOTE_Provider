@@ -15,8 +15,12 @@ const currentAdmin = DataStore.getCurrentUser();
 function renderAvatar(el, currentUser, fallback = 'A') {
     if (!el) return;
     const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
+    el.textContent = '';
     if (currentUser && currentUser.profileImageUrl) {
-        el.innerHTML = `<img src="${esc(currentUser.profileImageUrl)}" alt="${esc(currentUser.name || 'Profile')}">`;
+        const img = document.createElement('img');
+        img.src = safeAssetUrl(currentUser.profileImageUrl);
+        img.alt = currentUser.name || 'Profile';
+        el.appendChild(img);
         el.classList.add('has-image');
     } else {
         el.textContent = initial;
@@ -49,6 +53,24 @@ function esc(str) {
     const d = document.createElement('div');
     d.textContent = String(str);
     return d.innerHTML;
+}
+
+function attr(str) {
+    return esc(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function jsArg(value) {
+    return attr(JSON.stringify(String(value || '')));
+}
+
+function safeAssetUrl(value) {
+    const raw = String(value || '').trim();
+    if (/^https?:\/\//i.test(raw) || /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(raw)) return raw;
+    return '';
+}
+
+function apiMaterialUrl(action, materialId, userId) {
+    return `${API_BASE}/materials/${action}/${encodeURIComponent(materialId)}?userId=${encodeURIComponent(userId || '')}`;
 }
 
 function refreshCurrentUserProfileUi() {
@@ -183,8 +205,8 @@ function renderPending(pending) {
                 </div>
             </div>
             <div class="user-actions">
-                <button class="btn btn-primary btn-sm" onclick="approveUser('${p.id}')">Approve</button>
-                <button class="btn btn-ghost btn-sm" onclick="rejectUser('${p.id}')" style="color:var(--error)">Reject</button>
+                <button class="btn btn-primary btn-sm" onclick="approveUser(${jsArg(p.id)})">Approve</button>
+                <button class="btn btn-ghost btn-sm" onclick="rejectUser(${jsArg(p.id)})" style="color:var(--error)">Reject</button>
             </div>
         `;
         list.appendChild(row);
@@ -207,8 +229,8 @@ function renderStudents(students) {
                 <div><div class="user-name">${esc(u.name)}</div><div class="user-meta">${esc(u.instituteName || '')} | ${esc(u.rollNo)} | Plan: ${esc(u.plan || 'free')}</div></div>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
-                ${u.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeUser('${u.id}')">Upgrade</button>`}
-                <button class="btn btn-ghost btn-sm" onclick="removeUser('${u.id}')" style="color:var(--error)">Remove</button>
+                ${u.plan === 'pro' ? '' : `<button class="btn btn-primary btn-sm" onclick="upgradeUser(${jsArg(u.id)})">Upgrade</button>`}
+                <button class="btn btn-ghost btn-sm" onclick="removeUser(${jsArg(u.id)})" style="color:var(--error)">Remove</button>
             </div>
         `;
         list.appendChild(row);
@@ -260,13 +282,13 @@ function renderMaterials(materials) {
                 <div><div class="user-name">${esc(m.title)}</div><div class="user-meta">${esc(m.subject)} • ${esc(m.size)}</div></div>
             </div>
             <div class="user-actions">
-                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/view/${m.id}?userId=${DataStore.getCurrentUser() && DataStore.getCurrentUser().id}\`" title="View" style="color:var(--blue); background:var(--blue-light);">
+                <button class="btn-icon-tile" onclick="window.location.href = apiMaterialUrl('view', ${jsArg(m.id)}, DataStore.getCurrentUser() && DataStore.getCurrentUser().id)" title="View" style="color:var(--blue); background:var(--blue-light);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
-                <button class="btn-icon-tile" onclick="window.location.href = \`${API_BASE}/materials/download/${m.id}?userId=${DataStore.getCurrentUser() && DataStore.getCurrentUser().id}\`" title="Download" style="color:var(--green); background:rgba(46,204,113,0.1);">
+                <button class="btn-icon-tile" onclick="window.location.href = apiMaterialUrl('download', ${jsArg(m.id)}, DataStore.getCurrentUser() && DataStore.getCurrentUser().id)" title="Download" style="color:var(--green); background:rgba(46,204,113,0.1);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
-                <button class="btn-icon-tile" onclick="deleteMat('${m.id}')" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
+                <button class="btn-icon-tile" onclick="deleteMat(${jsArg(m.id)})" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 </button>
             </div>

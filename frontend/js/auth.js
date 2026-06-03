@@ -118,7 +118,10 @@ function showToast(msg, type = 'info') {
     const box = document.getElementById('toastBox');
     const toast = document.createElement('div');
     toast.className = 'toast ' + type;
-    toast.innerHTML = (svgs[type] || svgs.info) + '<span>' + msg + '</span>';
+    toast.innerHTML = svgs[type] || svgs.info;
+    const text = document.createElement('span');
+    text.textContent = msg || '';
+    toast.appendChild(text);
     box.appendChild(toast);
     setTimeout(() => {
         toast.classList.add('hide');

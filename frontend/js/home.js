@@ -12,8 +12,12 @@ const user = DataStore.getCurrentUser();
 function renderAvatar(el, currentUser, fallback = 'S') {
     if (!el) return;
     const initial = currentUser && currentUser.name ? currentUser.name[0].toUpperCase() : fallback;
+    el.textContent = '';
     if (currentUser && currentUser.profileImageUrl) {
-        el.innerHTML = `<img src="${esc(currentUser.profileImageUrl)}" alt="${esc(currentUser.name || 'Profile')}">`;
+        const img = document.createElement('img');
+        img.src = safeAssetUrl(currentUser.profileImageUrl);
+        img.alt = currentUser.name || 'Profile';
+        el.appendChild(img);
         el.classList.add('has-image');
     } else {
         el.textContent = initial;
@@ -110,6 +114,24 @@ function esc(str) {
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+}
+
+function attr(str) {
+    return esc(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function jsArg(value) {
+    return attr(JSON.stringify(String(value || '')));
+}
+
+function safeAssetUrl(value) {
+    const raw = String(value || '').trim();
+    if (/^https?:\/\//i.test(raw) || /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(raw)) return raw;
+    return '';
+}
+
+function apiMaterialUrl(action, materialId, userId) {
+    return `${API_BASE}/materials/${action}/${encodeURIComponent(materialId)}?userId=${encodeURIComponent(userId || '')}`;
 }
 
 let allMaterials = [];
@@ -336,11 +358,11 @@ function renderMaterials() {
                         <div class="mat-title">${esc(m.title)}</div>
                         <span class="mat-subject">${esc(m.subject)}</span>
                     </div>
-                    <button class="fav-btn active" onclick="toggleFav(event, '${m.id || m._id}')">
+                    <button class="fav-btn active" onclick="toggleFav(event, ${jsArg(m.id || m._id)})">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     </button>
                 </div>
-                <div onclick="openMatModal('${m.id || m._id}')" style="margin-top: 14px; cursor:pointer;">
+                <div onclick="openMatModal(${jsArg(m.id || m._id)})" style="margin-top: 14px; cursor:pointer;">
                     <div class="mat-footer" style="padding-top: 10px; border-top: 1px solid var(--input-border);">
                         <span style="font-weight: 500; color: var(--blue);">View Material</span>
                         <span style="font-weight: 600;">${esc(m.size)}</span>
@@ -411,13 +433,13 @@ function openMatModal(id) {
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
     const currentUser = DataStore.getCurrentUser();
-    document.getElementById('modalView').onclick = () => window.location.href = `${API_BASE}/materials/view/${m.id || m._id}?userId=${currentUser && currentUser.id}`;
+    document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, currentUser && currentUser.id);
     const downloadBtn = document.getElementById('modalDownload');
     const canDownload = currentUser && (['admin', 'superadmin'].includes(currentUser.role) || currentUser.plan === 'pro');
     if (canDownload) {
         downloadBtn.disabled = false;
         downloadBtn.onclick = () => {
-            window.location.href = `${API_BASE}/materials/download/${m.id || m._id}?userId=${currentUser.id}`;
+            window.location.href = apiMaterialUrl('download', m.id || m._id, currentUser.id);
             showToast('Download started!', 'success');
         };
     } else {
@@ -648,6 +670,7 @@ document.getElementById('submitRatingBtn')?.addEventListener('click', async () =
         const topMaterials = relevantMaterials
             .slice(0, 12)
             .map(item => ({
+                id: item.material.id || item.material._id,
                 title: item.material.title,
                 subject: item.material.subject,
                 category: item.material.category || item.material.type || 'Material'

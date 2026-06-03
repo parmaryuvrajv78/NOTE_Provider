@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const { upload, supabase, isSupabaseConfigured } = require('../middlewares/upload');
+const { cleanText } = require('../utils/sanitize');
 
 function serializeUser(user) {
     const teacher = user.adminId && typeof user.adminId === 'object' ? user.adminId : null;
@@ -89,10 +90,10 @@ router.put('/profile', upload.single('profileImage'), async (req, res) => {
             return res.status(403).json({ success: false, message: 'User not allowed to update profile.' });
         }
 
-        const name = String(req.body.name || '').trim();
-        const branch = String(req.body.branch || '').trim();
-        const semester = String(req.body.semester || '').trim();
-        const instituteName = String(req.body.instituteName || '').trim();
+        const name = cleanText(req.body.name, 120);
+        const branch = cleanText(req.body.branch, 120);
+        const semester = cleanText(req.body.semester, 40);
+        const instituteName = cleanText(req.body.instituteName, 160);
 
         if (!name) {
             return res.status(400).json({ success: false, message: 'Name is required.' });

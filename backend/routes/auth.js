@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
+const { cleanIdentifier, cleanText } = require('../utils/sanitize');
 
 function safeUserPayload(user) {
     const teacher = user.adminId && typeof user.adminId === 'object' ? user.adminId : null;
@@ -156,11 +157,11 @@ router.get('/login', (req, res) => {
 router.post('/register', async (req, res) => {
     try {
         const role = req.body.role === 'admin' ? 'admin' : 'student';
-        const name = String(req.body.name || '').trim();
+        const name = cleanText(req.body.name, 120);
 
         if (role === 'admin') {
-            const teacherId = String(req.body.phone || req.body.adminCode || '').trim().toUpperCase();
-            const instituteName = String(req.body.instituteName || '').trim();
+            const teacherId = cleanIdentifier(req.body.phone || req.body.adminCode, 80).toUpperCase();
+            const instituteName = cleanText(req.body.instituteName, 160);
 
             if (!name || !teacherId || !instituteName) {
                 return res.json({ success: false, message: 'Teacher name, teacher ID, and institute name are required.' });
@@ -196,8 +197,8 @@ router.post('/register', async (req, res) => {
             return res.json({ success: true, message: 'Teacher request sent to super admin for approval.' });
         }
 
-        const rollNo = String(req.body.rollNo || '').trim().toUpperCase();
-        const enrollNo = String(req.body.enrollNo || '').trim().toUpperCase();
+        const rollNo = cleanIdentifier(req.body.rollNo, 80).toUpperCase();
+        const enrollNo = cleanIdentifier(req.body.enrollNo, 80).toUpperCase();
         const adminId = String(req.body.adminId || '').trim();
 
         if (!name || !rollNo || !enrollNo || !isValidObjectId(adminId)) {

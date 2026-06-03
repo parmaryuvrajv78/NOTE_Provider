@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
+const { PDFParse } = require('pdf-parse');
 const Material = require('../models/material');
 const User = require('../models/user');
 const QuizScore = require('../models/quizScore');
 const { upload, supabase, isSupabaseConfigured } = require('../middlewares/upload');
+const { cleanQuizQuestions, cleanText, cleanUrl } = require('../utils/sanitize');
+
+const MAX_STORED_CONTENT_CHARS = Number(process.env.MAX_STORED_CONTENT_CHARS || 100000);
 
 function idEquals(a, b) {
     return a && b && a.toString() === b.toString();
@@ -60,7 +64,43 @@ function serializeMaterial(mat) {
         delete obj.fileUrl;
         delete obj.fileName;
     }
+    delete obj.contentText;
     return { ...obj, id: mat._id.toString() };
+}
+
+async function extractMaterialText(file) {
+    if (!file || !file.buffer) return '';
+
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+
+    try {
+        if (ext === '.txt' || mime.startsWith('text/')) {
+            return file.buffer.toString('utf8').replace(/\s+/g, ' ').trim().slice(0, MAX_STORED_CONTENT_CHARS);
+        }
+
+        if (ext === '.pdf' || mime === 'application/pdf') {
+            const parser = new PDFParse({ data: file.buffer });
+            try {
+                const parsed = await parser.getText();
+                return String(parsed.text || '').replace(/\s+/g, ' ').trim().slice(0, MAX_STORED_CONTENT_CHARS);
+            } finally {
+                await parser.destroy();
+            }
+        }
+    } catch (err) {
+        console.warn('Could not extract material text:', err.message || err);
+    }
+
+    return '';
+}
+
+function quizQuestionsToText(questions = []) {
+    return questions.map((question, index) => {
+        const options = Array.isArray(question.options) ? question.options.join(' | ') : '';
+        const correct = Array.isArray(question.options) ? question.options[question.correctAnswer] : '';
+        return `Question ${index + 1}: ${question.question || ''} Options: ${options} Correct answer: ${correct || question.correctAnswer} Explanation: ${question.explanation || ''}`;
+    }).join('\n');
 }
 
 function serializeQuizScore(score) {
@@ -205,7 +245,10 @@ router.post('/quiz-scores', async (req, res) => {
 // 6. Materials: Upload
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
-        const { title, subject, category, link, questions, adminId } = req.body;
+        const { link, questions, adminId } = req.body;
+        const title = cleanText(req.body.title, 200);
+        const subject = cleanText(req.body.subject, 120);
+        const category = cleanText(req.body.category, 30);
         const file = req.file;
         const admin = await getAdmin(adminId);
 
@@ -213,39 +256,55 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only a valid admin can upload materials.' });
         }
 
+        if (!title || !subject) {
+            return res.status(400).json({ success: false, message: 'Title and subject are required.' });
+        }
+
         // Handle Video Links
         if (category === 'Video' && link) {
+            const safeLink = cleanUrl(link);
+            if (!safeLink) {
+                return res.status(400).json({ success: false, message: 'Please enter a valid http or https video link.' });
+            }
+
             const newMat = new Material({
                 title,
                 subject,
                 category: 'Video',
                 type: 'LINK',
                 size: 'Link',
-                fileUrl: link,
+                fileUrl: safeLink,
                 fileName: 'video_link',
                 createdBy: admin._id
             });
             await newMat.save();
-            return res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+            return res.json({ success: true, material: serializeMaterial(newMat) });
         }
 
         // Handle Quiz Questions
         if (category === 'Quiz' && questions) {
             try {
                 const parsedQuestions = typeof questions === 'string' ? JSON.parse(questions) : questions;
+                const safeQuestions = cleanQuizQuestions(parsedQuestions);
+
+                if (!safeQuestions.length) {
+                    return res.status(400).json({ success: false, message: 'Add at least one valid quiz question.' });
+                }
                 
                 const newMat = new Material({
                     title,
                     subject,
                     category: 'Quiz',
                     type: 'QUIZ',
-                    size: `${parsedQuestions.length} Questions`,
-                    questions: parsedQuestions,
+                    size: `${safeQuestions.length} Questions`,
+                    questions: safeQuestions,
                     fileName: 'quiz',
+                    contentText: quizQuestionsToText(safeQuestions),
+                    contentExtractedAt: new Date(),
                     createdBy: admin._id
                 });
                 await newMat.save();
-                return res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+                return res.json({ success: true, material: serializeMaterial(newMat) });
             } catch (err) {
                 return res.status(400).json({ success: false, message: 'Invalid quiz format' });
             }
@@ -285,6 +344,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             .getPublicUrl(fileName);
 
         const fileUrl = publicUrlData.publicUrl;
+        const extractedText = await extractMaterialText(file);
 
         const newMat = new Material({
             title,
@@ -294,11 +354,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
             fileUrl: fileUrl,
             fileName: fileName,
+            contentText: extractedText,
+            contentExtractedAt: extractedText ? new Date() : null,
             createdBy: admin._id
         });
 
         await newMat.save();
-        res.json({ success: true, material: { ...newMat.toObject(), id: newMat._id.toString() } });
+        res.json({ success: true, material: serializeMaterial(newMat) });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -358,7 +420,9 @@ router.get('/download/:id', async (req, res) => {
 
         // If it's a link type, allow redirect without gating
         if (mat.type === 'LINK') {
-            return res.redirect(mat.fileUrl);
+            const safeLink = cleanUrl(mat.fileUrl);
+            if (!safeLink) return res.status(400).json({ success: false, message: 'Invalid material link' });
+            return res.redirect(safeLink);
         }
 
         // Require user identification to allow downloads for pro users
@@ -454,7 +518,9 @@ router.get('/view/:id', async (req, res) => {
         }
 
         if (mat.type === 'LINK') {
-            return res.redirect(mat.fileUrl);
+            const safeLink = cleanUrl(mat.fileUrl);
+            if (!safeLink) return res.status(400).json({ success: false, message: 'Invalid material link' });
+            return res.redirect(safeLink);
         }
 
         if (!ensureStorageConfigured(res)) return;
