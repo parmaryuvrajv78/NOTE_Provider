@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes — Auth Logic (Async)
+   YuVision — Auth Logic (Async)
    ============================================ */
 
 // --- Session check ---

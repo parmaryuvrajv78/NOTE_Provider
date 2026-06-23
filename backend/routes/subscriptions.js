@@ -98,7 +98,7 @@ router.get('/config', (req, res) => {
         mode: getEnvironment(),
         amount: Number(process.env.SUBSCRIPTION_AMOUNT || process.env.PRO_PLAN_AMOUNT || 99),
         currency: 'INR',
-        planName: process.env.SUBSCRIPTION_PLAN_NAME || 'Xyron Notes Pro'
+        planName: process.env.SUBSCRIPTION_PLAN_NAME || 'YuVision Pro'
     });
 });
 
@@ -128,7 +128,7 @@ router.post('/create', async (req, res) => {
             return res.json({ success: true, alreadyActive: true, ...serializePlan(user) });
         }
 
-        const subscriptionId = `XYRON_${user._id.toString()}_${Date.now()}`;
+        const subscriptionId = `YUVISION_${user._id.toString()}_${Date.now()}`;
         const payload = buildSubscriptionPayload({ subscriptionId, user });
         const cashfreeData = await cashfreeRequest('/subscriptions', {
             method: 'POST',

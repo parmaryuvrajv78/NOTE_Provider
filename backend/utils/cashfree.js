@@ -111,7 +111,7 @@ function buildSubscriptionPayload({ subscriptionId, user }) {
     const intervals = Number(process.env.SUBSCRIPTION_INTERVALS || 1);
     const maxCycles = Number(process.env.SUBSCRIPTION_MAX_CYCLES || 12);
     const authAmount = Number(process.env.SUBSCRIPTION_AUTH_AMOUNT || 1);
-    const planName = process.env.SUBSCRIPTION_PLAN_NAME || 'Xyron Notes Pro';
+    const planName = process.env.SUBSCRIPTION_PLAN_NAME || 'YuVision Pro';
     const firstChargeDelayDays = Number(process.env.SUBSCRIPTION_FIRST_CHARGE_DELAY_DAYS || 1);
     const firstCharge = plusDays(new Date(), Math.max(1, firstChargeDelayDays));
     const returnUrl = getSubscriptionReturnUrl();
@@ -119,8 +119,8 @@ function buildSubscriptionPayload({ subscriptionId, user }) {
     return {
         subscription_id: subscriptionId,
         customer_details: {
-            customer_name: user.name || 'Xyron Notes Student',
-            customer_email: process.env.CASHFREE_DEFAULT_CUSTOMER_EMAIL || `${subscriptionId.toLowerCase()}@xyron-notes.local`,
+            customer_name: user.name || 'YuVision Student',
+            customer_email: process.env.CASHFREE_DEFAULT_CUSTOMER_EMAIL || `${subscriptionId.toLowerCase()}@yuvision.local`,
             customer_phone: String(user.phone || process.env.CASHFREE_DEFAULT_CUSTOMER_PHONE || '9999999999').replace(/\D/g, '').slice(-10) || '9999999999'
         },
         plan_details: {

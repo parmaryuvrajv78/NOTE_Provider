@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes — Admin Dashboard Logic (Async)
+   YuVision — Admin Dashboard Logic (Async)
    ============================================ */
 
 // Auth Guard

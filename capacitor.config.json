@@ -1,6 +1,6 @@
 {
-  "appId": "com.xyron.notes",
-  "appName": "Xyron Notes",
+  "appId": "com.yuvision.app",
+  "appName": "YuVision",
   "webDir": "frontend",
   "server": {
     "androidScheme": "https"

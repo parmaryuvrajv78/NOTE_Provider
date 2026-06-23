@@ -1,4 +1,5 @@
 {
+  "name": "yuvision",
   "scripts": {
     "start": "npm start --prefix backend",
     "dev": "npm run dev --prefix backend",

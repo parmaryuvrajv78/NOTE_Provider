@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes — Student Home Logic (Async)
+   YuVision — Student Home Logic (Async)
    ============================================ */
 
 // Auth Guard
@@ -9,7 +9,7 @@
 })();
 
 const user = DataStore.getCurrentUser();
-const PENDING_SUBSCRIPTION_KEY = 'xyron_pending_subscription_id';
+const PENDING_SUBSCRIPTION_KEY = 'yuvision_pending_subscription_id';
 
 function renderAvatar(el, currentUser, fallback = 'S') {
     if (!el) return;

@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes — Subject Specific Logic
+   YuVision — Subject Specific Logic
    ============================================ */
 
 (function () {

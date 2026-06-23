@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes - Super Admin Dashboard Logic
+   YuVision - Super Admin Dashboard Logic
    ============================================ */
 
 (function () {

@@ -106,7 +106,7 @@ router.post('/login', async (req, res) => {
                     $set: {
                         name: 'Yuvraj',
                         adminCode: 'PU50',
-                        instituteName: 'Xyron Notes',
+                        instituteName: 'YuVision',
                         role: 'superadmin',
                         approved: true
                     }

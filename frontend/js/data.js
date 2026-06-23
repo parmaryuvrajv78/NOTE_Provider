@@ -1,5 +1,5 @@
 /* ============================================
-   Xyron Notes — API Client (Replacing Local DataStore)
+   YuVision — API Client (Replacing Local DataStore)
    ============================================ */
 
 // Automatically switch between local development and production backend

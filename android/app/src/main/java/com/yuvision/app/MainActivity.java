@@ -1,4 +1,4 @@
-package com.xyron.notes;
+package com.yuvision.app;
 
 import com.getcapacitor.BridgeActivity;
 
