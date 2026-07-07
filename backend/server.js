@@ -112,10 +112,10 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Serve the frontend locally when this repo is running as a single app.
-const frontendPath = path.join(__dirname, '..', 'frontend');
-if (fs.existsSync(frontendPath)) {
-    app.use(express.static(frontendPath));
+// Serve Floak locally when this repo is running as a single app.
+const floakPath = path.join(__dirname, '..', 'floak');
+if (fs.existsSync(floakPath)) {
+    app.use(express.static(floakPath));
 }
 
 // Root route
