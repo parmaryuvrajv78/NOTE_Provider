@@ -1,4 +1,4 @@
-package com.yuvision.app;
+package com.floak.app;
 
 import com.getcapacitor.BridgeActivity;
 

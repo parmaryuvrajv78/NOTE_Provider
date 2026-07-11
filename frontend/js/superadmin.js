@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision - Super Admin Dashboard Logic
+   Floak - Super Admin Dashboard Logic
    ============================================ */
 
 (function () {

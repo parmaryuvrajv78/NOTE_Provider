@@ -19,7 +19,7 @@ SUPABASE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_BUCKET=materials
 ```
 
-Use the service role key only in `backend/.env` or Render environment variables. Never put it in frontend JavaScript.
+Use the service role key only in `backend/.env` or Render environment variables. Never put it in Floak JavaScript.
 
 ## 3. Render Variables
 

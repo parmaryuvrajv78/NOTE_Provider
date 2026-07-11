@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision — Subject Specific Logic
+   Floak — Subject Specific Logic
    ============================================ */
 
 (function () {

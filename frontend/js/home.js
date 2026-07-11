@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision — Student Home Logic (Async)
+   Floak — Student Home Logic (Async)
    ============================================ */
 
 // Auth Guard
@@ -9,7 +9,7 @@
 })();
 
 const user = DataStore.getCurrentUser();
-const PENDING_SUBSCRIPTION_KEY = 'yuvision_pending_subscription_id';
+const PENDING_SUBSCRIPTION_KEY = 'floak_pending_subscription_id';
 
 function renderAvatar(el, currentUser, fallback = 'S') {
     if (!el) return;

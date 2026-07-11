@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision — API Client (Replacing Local DataStore)
+   Floak — API Client (Replacing Local DataStore)
    ============================================ */
 
 // Automatically switch between local development and production backend

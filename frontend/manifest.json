@@ -1,6 +1,6 @@
 {
-  "name": "YuVision",
-  "short_name": "YuVision",
+  "name": "Floak",
+  "short_name": "Floak",
   "description": "Secure Study Material Portal for Students",
   "id": "/",
   "start_url": "/index.html",

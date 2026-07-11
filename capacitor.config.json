@@ -1,7 +1,7 @@
 {
-  "appId": "com.yuvision.app",
-  "appName": "YuVision",
-  "webDir": "frontend",
+  "appId": "com.floak.app",
+  "appName": "Floak",
+  "webDir": "floak",
   "server": {
     "androidScheme": "https"
   }

@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision — Admin Dashboard Logic (Async)
+   Floak — Admin Dashboard Logic (Async)
    ============================================ */
 
 // Auth Guard

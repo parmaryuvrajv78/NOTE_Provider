@@ -1,5 +1,5 @@
 /* ============================================
-   YuVision — Auth Logic (Async)
+   Floak — Auth Logic (Async)
    ============================================ */
 
 // --- Session check ---
