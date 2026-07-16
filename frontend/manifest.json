@@ -1,7 +1,7 @@
 {
   "name": "Floak",
   "short_name": "Floak",
-  "description": "Secure Study Material Portal for Students",
+  "description": "Floak",
   "id": "/",
   "start_url": "/index.html",
   "scope": "/",

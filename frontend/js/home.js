@@ -33,7 +33,7 @@ if (user) {
     const welcomeMeta = document.getElementById('welcomeMeta');
     if (welcomeMeta) {
         const meta = [user.instituteName, user.teacherName ? `Teacher: ${user.teacherName}` : ''].filter(Boolean);
-        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download study materials for your semester';
+        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download resources on Floak';
     }
     document.getElementById('welcomeMsg').textContent = 'Hey ' + user.name.split(' ')[0] + '! 👋';
 
@@ -265,7 +265,7 @@ function refreshCurrentUserProfileUi() {
     const welcomeMeta = document.getElementById('welcomeMeta');
     if (welcomeMeta) {
         const meta = [updated.instituteName, updated.teacherName ? `Teacher: ${updated.teacherName}` : ''].filter(Boolean);
-        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download study materials for your semester';
+        welcomeMeta.textContent = meta.length ? meta.join(' | ') : 'Browse and download resources on Floak';
     }
     updateAccountSidebar();
 }
