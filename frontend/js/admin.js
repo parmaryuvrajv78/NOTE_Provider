@@ -73,6 +73,50 @@ function apiMaterialUrl(action, materialId, userId) {
     return `${API_BASE}/materials/${action}/${encodeURIComponent(materialId)}?userId=${encodeURIComponent(userId || '')}`;
 }
 
+let adminMaterials = [];
+let activeMaterialFilter = 'All';
+let materialSearchTerm = '';
+
+function getMaterialCategory(material) {
+    const category = material && material.category ? String(material.category) : '';
+    if (['Notes', 'Video', 'Simulation', 'Quiz'].includes(category)) return category;
+    const type = String((material && material.type) || '').toUpperCase();
+    if (['MP4', 'MKV', 'AVI', 'WEBM'].includes(type)) return 'Video';
+    return 'Notes';
+}
+
+function getMaterialIcon(category) {
+    if (category === 'Video') return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3V9z"/></svg>';
+    if (category === 'Simulation') return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>';
+    if (category === 'Quiz') return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11h6"/><path d="M9 15h4"/><path d="M8 3h8l2 3v15H6V6l2-3z"/></svg>';
+    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>';
+}
+
+function setMaterialCount(id, count) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+}
+
+function updateMaterialCounts(materials) {
+    const counts = { All: materials.length, Notes: 0, Video: 0, Simulation: 0, Quiz: 0 };
+    materials.forEach(material => {
+        const category = getMaterialCategory(material);
+        counts[category] = (counts[category] || 0) + 1;
+    });
+    setMaterialCount('matCountAll', counts.All);
+    setMaterialCount('matCountNotes', counts.Notes);
+    setMaterialCount('matCountVideo', counts.Video);
+    setMaterialCount('matCountSimulation', counts.Simulation);
+    setMaterialCount('matCountQuiz', counts.Quiz);
+}
+
+function updateMaterialsFilterLabel(count) {
+    const el = document.getElementById('materialsFilterLabel');
+    if (!el) return;
+    const type = activeMaterialFilter === 'All' ? 'all materials' : activeMaterialFilter.toLowerCase();
+    el.textContent = `Showing ${count} ${type}`;
+}
+
 function refreshCurrentUserProfileUi() {
     const updated = DataStore.getCurrentUser();
     if (!updated) return;
@@ -271,8 +315,58 @@ function renderQuizScores(scores) {
 }
 
 function renderMaterials(materials) {
+    adminMaterials = Array.isArray(materials) ? materials : [];
+    updateMaterialCounts(adminMaterials);
+
     const list = document.getElementById('materialsAdminList');
     list.innerHTML = '';
+    const search = materialSearchTerm.trim().toLowerCase();
+    const filtered = adminMaterials.filter(m => {
+        const category = getMaterialCategory(m);
+        const matchesType = activeMaterialFilter === 'All' || category === activeMaterialFilter;
+        const text = `${m.title || ''} ${m.subject || ''} ${m.size || ''}`.toLowerCase();
+        return matchesType && (!search || text.includes(search));
+    });
+
+    updateMaterialsFilterLabel(filtered.length);
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="empty-state materials-empty"><h3>No materials found</h3></div>';
+        return;
+    }
+
+    filtered.forEach(m => {
+        const category = getMaterialCategory(m);
+        const materialId = m.id || m._id;
+        const size = m.size || (category === 'Quiz' && m.questions ? `${m.questions.length} questions` : 'Ready');
+        const row = document.createElement('div');
+        row.className = `material-admin-card material-${category.toLowerCase()}`;
+        row.innerHTML = `
+            <div class="material-card-top">
+                <div class="material-card-icon">${getMaterialIcon(category)}</div>
+                <span class="material-pill">${esc(category === 'Notes' ? 'PDF' : category)}</span>
+            </div>
+            <div class="material-card-body">
+                <h3>${esc(m.title)}</h3>
+                <p>${esc(m.subject || 'General')}</p>
+                <span>${esc(size)}</span>
+            </div>
+            <div class="material-card-actions">
+                <button class="btn-icon-tile" onclick="window.location.href = apiMaterialUrl('view', ${jsArg(materialId)}, DataStore.getCurrentUser() && DataStore.getCurrentUser().id)" title="View" style="color:var(--blue); background:var(--blue-light);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="btn-icon-tile" onclick="window.location.href = apiMaterialUrl('download', ${jsArg(materialId)}, DataStore.getCurrentUser() && DataStore.getCurrentUser().id)" title="Download" style="color:var(--green); background:rgba(46,204,113,0.1);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="btn-icon-tile" onclick="deleteMat(${jsArg(materialId)})" title="Delete" style="color:var(--error); background:rgba(231,76,60,0.1);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+    return;
+
     materials.forEach(m => {
         const row = document.createElement('div');
         row.className = 'user-row';
@@ -352,10 +446,13 @@ function updateUploadFields() {
     const fileInput = document.getElementById('matFile');
     const linkInput = document.getElementById('matLink');
     const fileLabel = document.getElementById('matFileLabel');
+    const linkLabel = document.getElementById('matLinkLabel');
     
     if (val === 'Video') {
         videoSourceGroup.style.display = 'block';
         quizGroup.style.display = 'none';
+        if (linkLabel) linkLabel.textContent = 'Video Link (URL)';
+        linkInput.placeholder = 'e.g. https://youtube.com/...';
 
         if (videoSource === 'file') {
             fileGroup.style.display = 'block';
@@ -372,6 +469,17 @@ function updateUploadFields() {
             fileInput.accept = '';
             fileLabel.textContent = 'Select File';
         }
+    } else if (val === 'Simulation') {
+        videoSourceGroup.style.display = 'none';
+        fileGroup.style.display = 'none';
+        linkGroup.style.display = 'block';
+        quizGroup.style.display = 'none';
+        fileInput.required = false;
+        linkInput.required = true;
+        fileInput.accept = '';
+        if (linkLabel) linkLabel.textContent = 'Simulation Link (URL)';
+        linkInput.placeholder = 'e.g. https://phet.colorado.edu/...';
+        fileLabel.textContent = 'Select File';
     } else if (val === 'Quiz') {
         videoSourceGroup.style.display = 'none';
         fileGroup.style.display = 'none';
@@ -380,6 +488,7 @@ function updateUploadFields() {
         fileInput.required = false;
         linkInput.required = false;
         fileInput.accept = '';
+        linkInput.placeholder = '';
         fileLabel.textContent = 'Select File';
     } else {
         videoSourceGroup.style.display = 'none';
@@ -389,12 +498,25 @@ function updateUploadFields() {
         fileInput.required = true;
         linkInput.required = false;
         fileInput.accept = '.pdf,.doc,.docx,.ppt,.pptx,.txt';
+        linkInput.placeholder = '';
         fileLabel.textContent = 'Select File';
     }
 }
 
 document.getElementById('matCategory').addEventListener('change', updateUploadFields);
 document.getElementById('matVideoSource').addEventListener('change', updateUploadFields);
+document.getElementById('materialsSearchInput')?.addEventListener('input', (e) => {
+    materialSearchTerm = e.target.value;
+    renderMaterials(adminMaterials);
+});
+document.querySelectorAll('[data-material-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        activeMaterialFilter = btn.dataset.materialFilter || 'All';
+        document.querySelectorAll('[data-material-filter]').forEach(item => item.classList.remove('active'));
+        btn.classList.add('active');
+        renderMaterials(adminMaterials);
+    });
+});
 updateUploadFields();
 
 document.getElementById('addMaterialForm').addEventListener('submit', async (e) => {
@@ -447,6 +569,20 @@ document.getElementById('addMaterialForm').addEventListener('submit', async (e) 
 
             formData.append('link', link);
         }
+    } else if (category === 'Simulation') {
+        const link = document.getElementById('matLink').value.trim();
+
+        if (!link) {
+            showToast('Please enter a simulation link', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Upload';
+            document.getElementById('matLink').focus();
+            return;
+        }
+
+        formData.append('link', link);
+        formData.append('fileUrl', link);
+        formData.append('simulationLink', link);
     } else if (category === 'Quiz') {
         // Collect quiz questions
         const questions = [];

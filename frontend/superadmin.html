@@ -110,11 +110,11 @@
                         <div class="form-grid">
                             <div class="field"><label for="matTitle">Document Title</label><input type="text" id="matTitle" required class="input-box"></div>
                             <div class="field"><label for="matSubject">Subject Name</label><input type="text" id="matSubject" required class="input-box"></div>
-                            <div class="field"><label for="matCategory">Category</label><select id="matCategory" required class="input-box"><option value="Notes">Notes (PDF, Docs)</option><option value="Video">Video Lectures (Link/File)</option><option value="Quiz">Quizzes / Assignments</option></select></div>
+                            <div class="field"><label for="matCategory">Category</label><select id="matCategory" required class="input-box"><option value="Notes">Notes (PDF, Docs)</option><option value="Video">Video Lectures (Link/File)</option><option value="Simulation">Simulation (Online Link)</option><option value="Quiz">Quizzes / Assignments</option></select></div>
                             <div class="field" id="videoSourceGroup" style="display: none;"><label for="matVideoSource">Video Source</label><select id="matVideoSource" class="input-box"><option value="link">Online Link</option><option value="file">Offline Video File</option></select></div>
                         </div>
                         <div class="field" id="fileFieldGroup"><label for="matFile" id="matFileLabel">Select File</label><input type="file" id="matFile" required class="input-box file-input"></div>
-                        <div class="field" id="linkFieldGroup" style="display: none;"><label for="matLink">Video Link (URL)</label><input type="url" id="matLink" class="input-box"></div>
+                        <div class="field" id="linkFieldGroup" style="display: none;"><label for="matLink" id="matLinkLabel">Video Link (URL)</label><input type="url" id="matLink" class="input-box"></div>
                         <div id="quizFieldGroup" class="quiz-builder" style="display: none;"><div class="quiz-builder-head"><label>Quiz Questions</label><button type="button" class="btn btn-secondary btn-inline" onclick="addQuizQuestion()">+ Add Question</button></div><div id="questionsContainer" class="questions-container"></div></div>
                         <div class="form-actions"><button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button><button type="button" class="btn btn-ghost" onclick="toggleUploadForm()">Cancel</button></div>
                     </form>

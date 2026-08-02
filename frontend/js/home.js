@@ -503,10 +503,25 @@ function openMatModal(id) {
     if (!m) return;
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
-    document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
+    document.getElementById('modalTags').innerHTML = m.category === 'Simulation'
+        ? '<span class="mat-tag">Simulation Link</span>'
+        : `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
     const currentUser = DataStore.getCurrentUser();
     document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, currentUser && currentUser.id);
     const downloadBtn = document.getElementById('modalDownload');
+    if (m.category === 'Simulation' && m.type === 'LINK') {
+        downloadBtn.disabled = false;
+        downloadBtn.style.opacity = '0.95';
+        downloadBtn.textContent = 'Open';
+        downloadBtn.onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, currentUser && currentUser.id);
+        document.getElementById('matModal').style.display = 'flex';
+        return;
+    }
+
+    downloadBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+    `;
     const canDownload = hasActiveProPlan(currentUser);
     if (canDownload) {
         downloadBtn.disabled = false;

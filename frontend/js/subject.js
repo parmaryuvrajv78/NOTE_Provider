@@ -130,6 +130,7 @@ function createCard(m) {
     const isFav = DataStore.isFavorite(m.id || m._id);
     const materialId = m.id || m._id;
     const savedScore = m.category === 'Quiz' ? quizScoresByMaterial[materialId] : null;
+    const iconText = m.category === 'Video' ? 'Vid' : m.category === 'Quiz' ? 'Quiz' : m.category === 'Simulation' ? 'Sim' : 'Doc';
     const scoreText = savedScore
         ? `<span class="mat-tag">Last: ${savedScore.score}/${savedScore.total} (${savedScore.percentage}%)</span>`
         : '';
@@ -138,7 +139,7 @@ function createCard(m) {
     card.innerHTML = `
         <div class="mat-card-head">
             <div class="mat-icon-box">
-                ${m.category === 'Video' ? '🎥' : m.category === 'Quiz' ? '📝' : '📄'}
+                ${iconText}
             </div>
             <div style="flex:1">
                 <div class="mat-title">${esc(m.title)}</div>
@@ -163,11 +164,13 @@ function renderMaterials() {
     const categories = {
         Notes: document.getElementById('notesContainer'),
         Video: document.getElementById('videoContainer'),
+        Simulation: document.getElementById('simulationContainer'),
         Quiz: document.getElementById('quizContainer')
     };
     const empties = {
         Notes: document.getElementById('notesEmpty'),
         Video: document.getElementById('videoEmpty'),
+        Simulation: document.getElementById('simulationEmpty'),
         Quiz: document.getElementById('quizEmpty')
     };
 
@@ -178,7 +181,7 @@ function renderMaterials() {
         empties[key].style.display = 'none';
     }
 
-    const counts = { Notes: 0, Video: 0, Quiz: 0 };
+    const counts = { Notes: 0, Video: 0, Simulation: 0, Quiz: 0 };
 
     subjectMaterials.forEach(m => {
         let cat = m.category;
@@ -383,11 +386,29 @@ function openMatModal(id) {
         return;
     }
 
+    if (m.category === 'Simulation' && m.type === 'LINK') {
+        document.getElementById('modalTitle').textContent = m.title;
+        document.getElementById('modalSubject').textContent = m.subject;
+        document.getElementById('modalTags').innerHTML = '<span class="mat-tag">Simulation Link</span>';
+        document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, user && user.id);
+        const downloadBtn = document.getElementById('modalDownload');
+        downloadBtn.disabled = false;
+        downloadBtn.style.opacity = '0.95';
+        downloadBtn.textContent = 'Open';
+        downloadBtn.onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, user && user.id);
+        document.getElementById('matModal').style.display = 'flex';
+        return;
+    }
+
     document.getElementById('modalTitle').textContent = m.title;
     document.getElementById('modalSubject').textContent = m.subject;
     document.getElementById('modalTags').innerHTML = `<span class="mat-tag">Size: ${esc(m.size)}</span>`;
     document.getElementById('modalView').onclick = () => window.location.href = apiMaterialUrl('view', m.id || m._id, user && user.id);
     const downloadBtn = document.getElementById('modalDownload');
+    downloadBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+    `;
     const currentUser = DataStore.getCurrentUser();
     const canDownload = hasActiveProPlan(currentUser);
     if (canDownload) {
