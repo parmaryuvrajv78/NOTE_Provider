@@ -103,6 +103,44 @@ function quizQuestionsToText(questions = []) {
     }).join('\n');
 }
 
+function normalizeMaterialCategory(value) {
+    const raw = cleanText(value, 80);
+    const key = raw.toLowerCase();
+    if (key.includes('simulation')) return 'Simulation';
+    if (key.includes('video')) return 'Video';
+    if (key.includes('quiz') || key.includes('assignment')) return 'Quiz';
+    if (key.includes('note') || key.includes('pdf') || key.includes('doc')) return 'Notes';
+    return raw || 'Notes';
+}
+
+function getMaterialLink(body) {
+    return body.link || body.matLink || body.url || body.fileUrl || body.simulationLink || '';
+}
+
+async function createOnlineLinkMaterial({ title, subject, category, link, admin }) {
+    const safeLink = cleanUrl(link);
+    if (!safeLink) {
+        return {
+            error: `Please enter a valid http or https ${category.toLowerCase()} link.`
+        };
+    }
+
+    const newMat = new Material({
+        title,
+        subject,
+        category,
+        type: 'LINK',
+        size: 'Link',
+        fileUrl: safeLink,
+        fileName: `${category.toLowerCase()}_link`,
+        contentText: `${title} ${subject} ${category} ${safeLink}`,
+        contentExtractedAt: new Date(),
+        createdBy: admin._id
+    });
+    await newMat.save();
+    return { material: newMat };
+}
+
 function serializeQuizScore(score) {
     const obj = score.toObject ? score.toObject() : score;
     const material = obj.materialId && typeof obj.materialId === 'object' ? obj.materialId : null;
@@ -245,10 +283,11 @@ router.post('/quiz-scores', async (req, res) => {
 // 6. Materials: Upload
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
-        const { link, questions, adminId } = req.body;
+        const { questions, adminId } = req.body;
+        const link = getMaterialLink(req.body);
         const title = cleanText(req.body.title, 200);
         const subject = cleanText(req.body.subject, 120);
-        const category = cleanText(req.body.category, 30);
+        const category = normalizeMaterialCategory(req.body.category);
         const file = req.file;
         const admin = await getAdmin(adminId);
 
@@ -260,25 +299,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(400).json({ success: false, message: 'Title and subject are required.' });
         }
 
-        // Handle Video Links
-        if (category === 'Video' && link) {
-            const safeLink = cleanUrl(link);
-            if (!safeLink) {
-                return res.status(400).json({ success: false, message: 'Please enter a valid http or https video link.' });
-            }
-
-            const newMat = new Material({
-                title,
-                subject,
-                category: 'Video',
-                type: 'LINK',
-                size: 'Link',
-                fileUrl: safeLink,
-                fileName: 'video_link',
-                createdBy: admin._id
-            });
-            await newMat.save();
-            return res.json({ success: true, material: serializeMaterial(newMat) });
+        // Link-only materials are stored directly in MongoDB; Supabase is only for file uploads.
+        if (['Video', 'Simulation'].includes(category) && link) {
+            const result = await createOnlineLinkMaterial({ title, subject, category, link, admin });
+            if (result.error) return res.status(400).json({ success: false, message: result.error });
+            return res.json({ success: true, material: serializeMaterial(result.material) });
         }
 
         // Handle Quiz Questions
@@ -308,6 +333,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             } catch (err) {
                 return res.status(400).json({ success: false, message: 'Invalid quiz format' });
             }
+        }
+
+        if (category === 'Simulation') {
+            return res.status(400).json({ success: false, message: 'Please enter a simulation link.' });
         }
 
         // Handle File Uploads
